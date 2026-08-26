@@ -1,0 +1,256 @@
+﻿{% extends "admin/base_admin.html" %}
+{% block title %}Community & Content Moderation{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item active">Community & Moderation</li>
+{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold mb-1">Community Oversight & Content Moderation</h4>
+        <p class="text-muted small mb-0">Manage social posts, comments, reports, and community policy enforcement</p>
+    </div>
+</div>
+
+<!-- Moderation Metrics -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card card-itsa p-3 border-start border-4 border-primary">
+            <div class="text-muted small">Total Posts</div>
+            <h4 class="fw-bold mb-0 text-primary">{{ posts|length }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-itsa p-3 border-start border-4 border-success">
+            <div class="text-muted small">Total Comments</div>
+            <h4 class="fw-bold mb-0 text-success">{{ comments|length }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-itsa p-3 border-start border-4 border-warning">
+            <div class="text-muted small">Total Reactions</div>
+            <h4 class="fw-bold mb-0 text-warning">{{ reactions_count }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-itsa p-3 border-start border-4 border-danger">
+            <div class="text-muted small">Pending Reports</div>
+            <h4 class="fw-bold mb-0 text-danger">{{ pending_reports|length }}</h4>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4" id="communityTabs">
+    <li class="nav-item">
+        <button class="nav-link active fw-semibold" data-bs-toggle="tab" data-bs-target="#reportsTab">
+            <i class="bi bi-shield-exclamation text-danger me-1"></i> Reports Queue ({{ reports|length }})
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#postsTab">
+            <i class="bi bi-chat-square-text me-1"></i> All Posts ({{ posts|length }})
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#commentsTab">
+            <i class="bi bi-chat-dots me-1"></i> All Comments ({{ comments|length }})
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <!-- Reports Tab -->
+    <div class="tab-pane fade show active" id="reportsTab">
+        <div class="card card-itsa overflow-hidden shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Reported Content</th>
+                            <th>Target Type</th>
+                            <th>Reason</th>
+                            <th>Reporter</th>
+                            <th>Timestamp</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Decision</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if reports %}
+                            {% for r in reports %}
+                            <tr>
+                                <td class="ps-4">
+                                    {% if r.reported_post %}
+                                    <div class="small fw-semibold text-truncate" style="max-width: 260px;">{{ r.reported_post.content }}</div>
+                                    <small class="text-muted">Author: {{ r.reported_post.user.full_name }}</small>
+                                    {% elif r.reported_comment %}
+                                    <div class="small fw-semibold text-truncate" style="max-width: 260px;">{{ r.reported_comment.content }}</div>
+                                    <small class="text-muted">Author: {{ r.reported_comment.user.full_name }}</small>
+                                    {% else %}
+                                    <span class="text-muted small">Content removed</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if r.reported_post_id %}
+                                    <span class="badge bg-primary">Post</span>
+                                    {% elif r.reported_comment_id %}
+                                    <span class="badge bg-info text-dark">Comment</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">User</span>
+                                    {% endif %}
+                                </td>
+                                <td><span class="badge bg-danger">{{ r.reason }}</span></td>
+                                <td>{{ r.reporter.full_name if r.reporter else 'Anonymous' }}</td>
+                                <td class="small">{{ r.created_at.strftime('%b %d, %H:%M') }}</td>
+                                <td>
+                                    <span class="badge {% if r.status == 'PENDING' %}bg-warning text-dark{% elif r.status == 'RESOLVED' %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {{ r.status }}
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    {% if r.reported_post_id %}
+                                        <button class="btn btn-sm btn-outline-danger me-1" onclick="resolveReport({{ r.id }}, 'REMOVE_POST')">Remove</button>
+                                        <button class="btn btn-sm btn-outline-success me-1" onclick="resolveReport({{ r.id }}, 'RESTORE_POST')">Restore</button>
+                                    {% elif r.reported_comment_id %}
+                                        <button class="btn btn-sm btn-outline-danger me-1" onclick="resolveReport({{ r.id }}, 'REMOVE_COMMENT')">Remove</button>
+                                        <button class="btn btn-sm btn-outline-success me-1" onclick="resolveReport({{ r.id }}, 'RESTORE_COMMENT')">Restore</button>
+                                    {% endif %}
+                                    <button class="btn btn-sm btn-light border" onclick="resolveReport({{ r.id }}, 'DISMISSED')">Dismiss</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="7" class="text-center py-4 text-muted">No content reports in queue.</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Posts Tab -->
+    <div class="tab-pane fade" id="postsTab">
+        <div class="card card-itsa overflow-hidden shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Author</th>
+                            <th>Content</th>
+                            <th>Reactions & Comments</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Toggle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if posts %}
+                            {% for p in posts %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold">{{ p.user.full_name }}</div>
+                                    <small class="text-muted">{{ p.user.email }}</small>
+                                </td>
+                                <td><div class="small text-truncate" style="max-width: 320px;">{{ p.content }}</div></td>
+                                <td>
+                                    <span class="badge bg-light text-dark border me-1"><i class="bi bi-heart-fill text-danger me-1"></i> {{ p.reactions.count() }}</span>
+                                    <span class="badge bg-light text-dark border"><i class="bi bi-chat-fill text-primary me-1"></i> {{ p.comments.count() }}</span>
+                                </td>
+                                <td class="small">{{ p.created_at.strftime('%b %d, %H:%M') }}</td>
+                                <td>
+                                    {% if p.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-danger">Hidden</span>{% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-sm {% if p.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}" onclick="togglePost({{ p.id }})">
+                                        {% if p.is_active %}Hide{% else %}Restore{% endif %}
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="6" class="text-center py-4 text-muted">No posts available.</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comments Tab -->
+    <div class="tab-pane fade" id="commentsTab">
+        <div class="card card-itsa overflow-hidden shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Commenter</th>
+                            <th>Comment Text</th>
+                            <th>Parent Post</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Toggle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if comments %}
+                            {% for c in comments %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold">{{ c.user.full_name }}</div>
+                                    <small class="text-muted">{{ c.user.email }}</small>
+                                </td>
+                                <td><div class="small text-truncate" style="max-width: 320px;">{{ c.content }}</div></td>
+                                <td class="small text-muted text-truncate" style="max-width: 200px;">
+                                    {{ c.post.content if c.post else 'Post #' + (c.post_id|string) }}
+                                </td>
+                                <td class="small">{{ c.created_at.strftime('%b %d, %H:%M') }}</td>
+                                <td>
+                                    {% if c.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-danger">Hidden</span>{% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-sm {% if c.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}" onclick="toggleComment({{ c.id }})">
+                                        {% if c.is_active %}Hide{% else %}Restore{% endif %}
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="6" class="text-center py-4 text-muted">No comments available.</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function resolveReport(reportId, action) {
+    try {
+        await apiCall(`/api/v1/admin/reports/${reportId}/resolve`, 'POST', { action: action });
+        showToast('Report handled successfully.', 'success');
+        setTimeout(() => window.location.reload(), 500);
+    } catch(err) {}
+}
+
+async function togglePost(postId) {
+    try {
+        await apiCall(`/api/v1/admin/posts/${postId}/toggle-active`, 'POST', {});
+        showToast('Post status toggled.', 'success');
+        setTimeout(() => window.location.reload(), 500);
+    } catch(err) {}
+}
+
+async function toggleComment(commentId) {
+    try {
+        await apiCall(`/api/v1/admin/comments/${commentId}/toggle-active`, 'POST', {});
+        showToast('Comment status toggled.', 'success');
+        setTimeout(() => window.location.reload(), 500);
+    } catch(err) {}
+}
+</script>
+{% endblock %}

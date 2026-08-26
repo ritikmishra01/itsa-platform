@@ -1,0 +1,161 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ITSA Platform{% endblock %} | Information Technology Students' Association</title>
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-itsa sticky-top py-2">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('pages.home') }}">
+                <div class="bg-primary text-white p-1 rounded-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                    <i class="bi bi-cpu-fill"></i>
+                </div>
+                <span>ITSA <span class="badge bg-warning text-dark fs-6 rounded-pill px-2 py-0">AI</span></span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3 gap-lg-1">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pages.events_page') }}"><i class="bi bi-calendar-event me-1"></i> Events</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pages.leaderboard_page') }}"><i class="bi bi-trophy me-1"></i> Leaderboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pages.verify_certificate_page') }}"><i class="bi bi-patch-check me-1"></i> Verify Certificate</a>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pages.social_feed') }}"><i class="bi bi-people me-1"></i> Community Feed</a>
+                    </li>
+                    {% endif %}
+                </ul>
+
+                <div class="d-flex align-items-center gap-3">
+                    {% if current_user.is_authenticated %}
+                        <!-- Notifications Bell -->
+                        <a href="{{ url_for('pages.notifications_page') }}" class="btn btn-light position-relative rounded-circle p-2">
+                            <i class="bi bi-bell fs-5"></i>
+                            {% if unread_notifications_count > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ unread_notifications_count }}
+                            </span>
+                            {% endif %}
+                        </a>
+
+                        <!-- Role Dashboard Quick Link -->
+                        {% if current_user.role == 'ADMIN' %}
+                        <a href="{{ url_for('pages.admin_dashboard') }}" class="btn btn-sm btn-outline-danger d-none d-md-inline-block">
+                            <i class="bi bi-speedometer2 me-1"></i> Admin Panel
+                        </a>
+                        {% elif current_user.role == 'COORDINATOR' %}
+                        <a href="{{ url_for('pages.coordinator_dashboard') }}" class="btn btn-sm btn-outline-warning text-dark d-none d-md-inline-block">
+                            <i class="bi bi-qr-code-scan me-1"></i> Coordinator Hub
+                        </a>
+                        {% elif current_user.role == 'STUDENT' %}
+                            {% if current_user.student_profile %}
+                            <span class="points-pill d-none d-md-inline-flex" title="Your ITSA Points">
+                                <i class="bi bi-stars"></i> {{ current_user.student_profile.total_points }} pts
+                            </span>
+                            {% endif %}
+                        {% endif %}
+
+                        <!-- User Profile Dropdown -->
+                        <div class="dropdown">
+                            <button class="btn btn-light dropdown-toggle d-flex align-items-center gap-2 rounded-pill px-3 py-1 border" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle fs-5 text-primary"></i>
+                                <span class="fw-semibold text-truncate" style="max-width: 120px;">{{ current_user.full_name }}</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
+                                <li class="px-3 py-2 border-bottom">
+                                    <div class="fw-bold">{{ current_user.full_name }}</div>
+                                    <div class="small text-muted">{{ current_user.email }}</div>
+                                    <span class="badge {% if current_user.role=='ADMIN' %}badge-role-admin{% elif current_user.role=='COORDINATOR' %}badge-role-coord{% else %}badge-role-student{% endif %} mt-1">
+                                        {{ current_user.role }}
+                                    </span>
+                                </li>
+                                {% if current_user.is_student %}
+                                <li><a class="dropdown-item py-2" href="{{ url_for('pages.student_dashboard') }}"><i class="bi bi-grid me-2"></i> Dashboard</a></li>
+                                <li><a class="dropdown-item py-2" href="{{ url_for('pages.my_tickets') }}"><i class="bi bi-ticket-perforated me-2"></i> My Tickets (QR)</a></li>
+                                <li><a class="dropdown-item py-2" href="{{ url_for('pages.my_attendance') }}"><i class="bi bi-check2-circle me-2"></i> Attendance History</a></li>
+                                <li><a class="dropdown-item py-2" href="{{ url_for('pages.my_certificates') }}"><i class="bi bi-award me-2"></i> My Certificates</a></li>
+                                <li><a class="dropdown-item py-2" href="{{ url_for('pages.chatbot_page') }}"><i class="bi bi-robot me-2 text-primary"></i> AI Assistant</a></li>
+                                {% elif current_user.is_coordinator %}
+                                <li><a class="dropdown-item py-2" href="{{ url_for('pages.coordinator_dashboard') }}"><i class="bi bi-qr-code-scan me-2"></i> Assigned Events & Scanner</a></li>
+                                {% elif current_user.is_admin %}
+                                <li><a class="dropdown-item py-2" href="{{ url_for('pages.admin_dashboard') }}"><i class="bi bi-gear-fill me-2"></i> Admin Control Center</a></li>
+                                {% endif %}
+                                <li><a class="dropdown-item py-2" href="{{ url_for('pages.profile_page') }}"><i class="bi bi-person-gear me-2"></i> Edit Profile</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item py-2 text-danger" href="{{ url_for('api_auth.logout') }}"><i class="bi bi-box-arrow-right me-2"></i> Sign Out</a></li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <a href="{{ url_for('pages.login_page') }}" class="btn btn-outline-primary px-3">Log In</a>
+                        <a href="{{ url_for('pages.register_page') }}" class="btn btn-primary px-3 shadow-sm">Join ITSA</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages Container -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show rounded-3 shadow-sm" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Body Content -->
+    <main class="py-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-top py-4 mt-auto">
+        <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-cpu-fill text-primary fs-5"></i>
+                <span class="fw-bold">ITSA</span> &copy; {{ now.year }} Information Technology Students' Association. All rights reserved.
+            </div>
+            <div class="d-flex gap-4 text-muted small">
+                <a href="{{ url_for('pages.events_page') }}" class="text-decoration-none text-muted">Events</a>
+                <a href="{{ url_for('pages.verify_certificate_page') }}" class="text-decoration-none text-muted">Verify Certificate</a>
+                <a href="{{ url_for('pages.leaderboard_page') }}" class="text-decoration-none text-muted">Leaderboard</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Global JS utilities -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

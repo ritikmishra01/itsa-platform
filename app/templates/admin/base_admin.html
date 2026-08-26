@@ -1,0 +1,144 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<div class="admin-wrapper">
+    <!-- Desktop Sidebar -->
+    <aside class="admin-sidebar shadow-sm">
+        <div class="admin-sidebar-brand">
+            <i class="bi bi-shield-lock-fill text-danger fs-5"></i>
+            <span>Administration</span>
+        </div>
+        <div class="admin-sidebar-nav">
+            <div class="admin-nav-header">Core</div>
+            <a href="{{ url_for('pages.admin_dashboard') }}" class="admin-nav-link {% if active_page == 'dashboard' %}active{% endif %}">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+
+            <div class="admin-nav-header">Operations</div>
+            <a href="{{ url_for('pages.admin_users') }}" class="admin-nav-link {% if active_page == 'users' %}active{% endif %}">
+                <i class="bi bi-people"></i> User Directory
+            </a>
+            <a href="{{ url_for('pages.admin_events') }}" class="admin-nav-link {% if active_page == 'events' %}active{% endif %}">
+                <i class="bi bi-calendar-event"></i> Event Lifecycle
+            </a>
+            <a href="{{ url_for('pages.admin_registrations') }}" class="admin-nav-link {% if active_page == 'registrations' %}active{% endif %}">
+                <i class="bi bi-ticket-perforated"></i> Registrations & Tickets
+            </a>
+            <a href="{{ url_for('pages.admin_attendance') }}" class="admin-nav-link {% if active_page == 'attendance' %}active{% endif %}">
+                <i class="bi bi-qr-code-scan"></i> QR Attendance
+            </a>
+            <a href="{{ url_for('pages.admin_certificates') }}" class="admin-nav-link {% if active_page == 'certificates' %}active{% endif %}">
+                <i class="bi bi-award"></i> Certificate Center
+            </a>
+
+            <div class="admin-nav-header">Engagement</div>
+            <a href="{{ url_for('pages.admin_community') }}" class="admin-nav-link {% if active_page == 'community' or active_page == 'moderation' %}active{% endif %}">
+                <i class="bi bi-chat-heart"></i> Community & Moderation
+            </a>
+            <a href="{{ url_for('pages.admin_gallery') }}" class="admin-nav-link {% if active_page == 'gallery' %}active{% endif %}">
+                <i class="bi bi-images"></i> Media & Gallery
+            </a>
+            <a href="{{ url_for('pages.admin_notifications') }}" class="admin-nav-link {% if active_page == 'notifications' %}active{% endif %}">
+                <i class="bi bi-megaphone"></i> Broadcast & Notifs
+            </a>
+            <a href="{{ url_for('pages.admin_gamification') }}" class="admin-nav-link {% if active_page == 'gamification' %}active{% endif %}">
+                <i class="bi bi-trophy"></i> Gamification & Points
+            </a>
+
+            <div class="admin-nav-header">Intelligence & Insights</div>
+            <a href="{{ url_for('pages.admin_ai_center') }}" class="admin-nav-link {% if active_page == 'ai_center' %}active{% endif %}">
+                <i class="bi bi-robot text-primary"></i> AI Center (Gemini)
+            </a>
+            <a href="{{ url_for('pages.admin_analytics') }}" class="admin-nav-link {% if active_page == 'analytics' %}active{% endif %}">
+                <i class="bi bi-bar-chart-line"></i> Deep Analytics
+            </a>
+            <a href="{{ url_for('pages.admin_reports') }}" class="admin-nav-link {% if active_page == 'reports' %}active{% endif %}">
+                <i class="bi bi-file-earmark-spreadsheet"></i> Export Reports
+            </a>
+
+            <div class="admin-nav-header">System</div>
+            <a href="{{ url_for('pages.admin_audit_logs') }}" class="admin-nav-link {% if active_page == 'audit_logs' %}active{% endif %}">
+                <i class="bi bi-journal-text"></i> Audit Logs
+            </a>
+            <a href="{{ url_for('pages.admin_settings') }}" class="admin-nav-link {% if active_page == 'settings' %}active{% endif %}">
+                <i class="bi bi-sliders"></i> Platform Settings
+            </a>
+        </div>
+    </aside>
+
+    <!-- Mobile Offcanvas Sidebar -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="adminMobileSidebar">
+        <div class="offcanvas-header border-bottom">
+            <h5 class="offcanvas-title fw-bold text-primary"><i class="bi bi-shield-lock-fill text-danger me-2"></i> Admin Panel</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body p-2">
+            <div class="admin-sidebar-nav">
+                <a href="{{ url_for('pages.admin_dashboard') }}" class="admin-nav-link"><i class="bi bi-speedometer2"></i> Dashboard</a>
+                <a href="{{ url_for('pages.admin_users') }}" class="admin-nav-link"><i class="bi bi-people"></i> User Directory</a>
+                <a href="{{ url_for('pages.admin_events') }}" class="admin-nav-link"><i class="bi bi-calendar-event"></i> Events</a>
+                <a href="{{ url_for('pages.admin_registrations') }}" class="admin-nav-link"><i class="bi bi-ticket-perforated"></i> Registrations</a>
+                <a href="{{ url_for('pages.admin_attendance') }}" class="admin-nav-link"><i class="bi bi-qr-code-scan"></i> Attendance</a>
+                <a href="{{ url_for('pages.admin_certificates') }}" class="admin-nav-link"><i class="bi bi-award"></i> Certificates</a>
+                <a href="{{ url_for('pages.admin_community') }}" class="admin-nav-link"><i class="bi bi-chat-heart"></i> Community</a>
+                <a href="{{ url_for('pages.admin_gallery') }}" class="admin-nav-link"><i class="bi bi-images"></i> Gallery</a>
+                <a href="{{ url_for('pages.admin_notifications') }}" class="admin-nav-link"><i class="bi bi-megaphone"></i> Broadcast</a>
+                <a href="{{ url_for('pages.admin_gamification') }}" class="admin-nav-link"><i class="bi bi-trophy"></i> Gamification</a>
+                <a href="{{ url_for('pages.admin_ai_center') }}" class="admin-nav-link"><i class="bi bi-robot text-primary"></i> AI Center</a>
+                <a href="{{ url_for('pages.admin_analytics') }}" class="admin-nav-link"><i class="bi bi-bar-chart-line"></i> Analytics</a>
+                <a href="{{ url_for('pages.admin_reports') }}" class="admin-nav-link"><i class="bi bi-file-earmark-spreadsheet"></i> Reports</a>
+                <a href="{{ url_for('pages.admin_audit_logs') }}" class="admin-nav-link"><i class="bi bi-journal-text"></i> Audit Logs</a>
+                <a href="{{ url_for('pages.admin_settings') }}" class="admin-nav-link"><i class="bi bi-sliders"></i> Settings</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="admin-content">
+        <!-- Top Toolbar & Search Bar -->
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-outline-secondary d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#adminMobileSidebar">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+                <div class="admin-search-wrap">
+                    <i class="bi bi-search admin-search-icon"></i>
+                    <form action="{{ url_for('pages.admin_search') }}" method="GET" class="d-inline">
+                        <input type="text" name="q" value="{{ search_query or '' }}" class="form-control form-control-sm admin-search-input" placeholder="Search students, events, tickets...">
+                    </form>
+                </div>
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="d-flex align-items-center gap-2">
+                <a href="{{ url_for('pages.admin_events') }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i> New Event
+                </a>
+                <a href="{{ url_for('pages.admin_notifications') }}" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-megaphone me-1"></i> Broadcast
+                </a>
+                <button class="btn btn-sm btn-light border dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="bi bi-person-gear me-1"></i> {{ current_user.full_name }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                    <li><a class="dropdown-item" href="{{ url_for('pages.profile_page') }}"><i class="bi bi-person me-2"></i> Admin Profile</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('pages.admin_settings') }}"><i class="bi bi-sliders me-2"></i> System Settings</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="{{ url_for('api_auth.logout') }}"><i class="bi bi-box-arrow-right me-2"></i> Sign Out</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Breadcrumbs -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb small">
+                <li class="breadcrumb-item"><a href="{{ url_for('pages.admin_dashboard') }}" class="text-decoration-none">Admin</a></li>
+                {% block breadcrumbs %}{% endblock %}
+            </ol>
+        </nav>
+
+        <!-- Admin Inner View Content -->
+        {% block admin_content %}{% endblock %}
+    </div>
+</div>
+{% endblock %}

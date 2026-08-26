@@ -1,0 +1,132 @@
+﻿{% extends "base.html" %}
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <!-- Top Welcome Banner -->
+    <div class="card card-itsa p-4 mb-4 bg-white border-0 shadow-sm">
+        <div class="row align-items-center g-3">
+            <div class="col-auto">
+                <div class="post-avatar bg-primary text-white fs-3" style="width: 64px; height: 64px;">
+                    {{ current_user.full_name[0] }}
+                </div>
+            </div>
+            <div class="col">
+                <h3 class="fw-bold mb-1">Hello, {{ current_user.full_name }}! 👋</h3>
+                <div class="text-muted small">
+                    {{ current_user.student_profile.department if current_user.student_profile else 'ITSA Member' }} &bull;
+                    Year {{ current_user.student_profile.year_of_study if current_user.student_profile else 1 }} &bull;
+                    Roll: <span class="font-monospace fw-semibold">{{ current_user.student_profile.student_id if current_user.student_profile else '' }}</span>
+                </div>
+            </div>
+            <div class="col-auto d-flex gap-2">
+                <a href="{{ url_for('pages.chatbot_page') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-robot me-1"></i> AI Assistant
+                </a>
+                <a href="{{ url_for('pages.social_feed') }}" class="btn btn-primary">
+                    <i class="bi bi-chat-square-text me-1"></i> Community Feed
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metric Counters & Engagement Score -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card card-itsa p-3 text-center">
+                <div class="points-pill mx-auto mb-2"><i class="bi bi-stars"></i> {{ current_user.student_profile.total_points if current_user.student_profile else 0 }} pts</div>
+                <div class="small text-muted fw-semibold">ITSA Points Balance</div>
+                <a href="{{ url_for('pages.leaderboard_page') }}" class="small text-primary text-decoration-none mt-1 d-block">View Leaderboard &rarr;</a>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-itsa p-3 text-center">
+                <div class="display-6 fw-bold text-success mb-1">{{ att_count }}</div>
+                <div class="small text-muted fw-semibold">Events Attended</div>
+                <a href="{{ url_for('pages.my_attendance') }}" class="small text-success text-decoration-none mt-1 d-block">Attendance Log &rarr;</a>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-itsa p-3 text-center">
+                <div class="display-6 fw-bold text-primary mb-1">{{ cert_count }}</div>
+                <div class="small text-muted fw-semibold">Certificates Earned</div>
+                <a href="{{ url_for('pages.my_certificates') }}" class="small text-primary text-decoration-none mt-1 d-block">Downloads &rarr;</a>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-itsa p-3 text-center">
+                <div class="display-6 fw-bold text-info mb-1">{{ engagement_score }}%</div>
+                <div class="small text-muted fw-semibold">AI Engagement Index</div>
+                <div class="progress mt-2" style="height: 6px;">
+                    <div class="progress-bar bg-info" style="width: {{ engagement_score }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Upcoming Registered Events -->
+        <div class="col-lg-7">
+            <div class="card card-itsa p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-ticket-perforated text-primary me-2"></i> Your Registered Events</h5>
+                    <a href="{{ url_for('pages.my_tickets') }}" class="small text-primary text-decoration-none">All Tickets &rarr;</a>
+                </div>
+
+                {% if upcoming_events %}
+                    <div class="list-group list-group-flush">
+                        {% for event in upcoming_events %}
+                        <div class="list-group-item px-0 py-3 border-bottom d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="fw-bold mb-1">{{ event.title }}</h6>
+                                <div class="small text-muted">
+                                    <i class="bi bi-calendar-event me-1"></i> {{ event.start_datetime.strftime('%b %d, %Y - %I:%M %p') }} &bull;
+                                    <i class="bi bi-geo-alt me-1"></i> {{ event.venue.name if event.venue else 'Auditorium' }}
+                                </div>
+                            </div>
+                            <a href="{{ url_for('pages.event_detail', event_id=event.id) }}" class="btn btn-sm btn-outline-primary">
+                                View QR Ticket
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-calendar2-x fs-2"></i>
+                        <p class="small mt-2 mb-3">You have no active event registrations right now.</p>
+                        <a href="{{ url_for('pages.events_page') }}" class="btn btn-sm btn-primary">Browse Open Events</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- AI Recommendations Column -->
+        <div class="col-lg-5">
+            <div class="card card-itsa p-4 mb-4 border-primary border-opacity-25" style="background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <div class="bg-primary text-white p-2 rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                        <i class="bi bi-magic"></i>
+                    </div>
+                    <h5 class="fw-bold mb-0">Recommended For You</h5>
+                </div>
+                <p class="small text-muted mb-3">Personalized recommendations powered by Scikit-learn based on your department & interests</p>
+
+                {% if recommendations %}
+                    {% for rec in recommendations %}
+                    <div class="p-3 bg-white border rounded-3 mb-2 shadow-sm">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <h6 class="fw-bold mb-1 text-primary">{{ rec.title }}</h6>
+                            <span class="badge bg-light text-primary border">{{ (rec.score * 100)|int }}% match</span>
+                        </div>
+                        <div class="small text-muted mb-2"><i class="bi bi-lightbulb text-warning me-1"></i> {{ rec.reason }}</div>
+                        <a href="{{ url_for('pages.event_detail', event_id=rec.event_id) }}" class="btn btn-sm btn-outline-primary w-100 py-1">View Details</a>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="small text-muted text-center py-3">Register for events to help our AI engine personalize suggestions!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

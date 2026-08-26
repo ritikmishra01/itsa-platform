@@ -1,0 +1,85 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Admin Search Results{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item active">Search: "{{ search_query }}"</li>
+{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold mb-1">Global Admin Search Results</h4>
+        <p class="text-muted small mb-0">Found {{ total_matches }} matching items for <span class="badge bg-primary">{{ search_query }}</span></p>
+    </div>
+</div>
+
+<!-- Categorized Search Results -->
+{% if students %}
+<div class="card card-itsa overflow-hidden shadow-sm mb-4">
+    <div class="card-header bg-white py-3 fw-bold"><i class="bi bi-mortarboard text-primary me-2"></i> Matching Students ({{ students|length }})</div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <tbody>
+                {% for s in students %}
+                <tr>
+                    <td class="ps-4 fw-bold">{{ s.full_name }}</td>
+                    <td>{{ s.email }}</td>
+                    <td class="font-monospace small">{{ s.student_profile.student_id if s.student_profile else '-' }}</td>
+                    <td>{{ s.student_profile.department if s.student_profile else '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if events %}
+<div class="card card-itsa overflow-hidden shadow-sm mb-4">
+    <div class="card-header bg-white py-3 fw-bold"><i class="bi bi-calendar-event text-success me-2"></i> Matching Events ({{ events|length }})</div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <tbody>
+                {% for e in events %}
+                <tr>
+                    <td class="ps-4 fw-bold">{{ e.title }}</td>
+                    <td>{{ e.category.name if e.category else 'General' }}</td>
+                    <td>{{ e.start_datetime.strftime('%b %d, %Y') }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ e.status }}</span></td>
+                    <td class="text-end pe-4"><a href="{{ url_for('pages.event_detail', event_id=e.id) }}" class="btn btn-sm btn-light">View</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if registrations %}
+<div class="card card-itsa overflow-hidden shadow-sm mb-4">
+    <div class="card-header bg-white py-3 fw-bold"><i class="bi bi-ticket-perforated text-info me-2"></i> Matching Registrations ({{ registrations|length }})</div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <tbody>
+                {% for r in registrations %}
+                <tr>
+                    <td class="ps-4 font-monospace small text-primary">{{ r.registration_number }}</td>
+                    <td class="fw-bold">{{ r.user.full_name }}</td>
+                    <td>{{ r.event.title }}</td>
+                    <td><span class="badge bg-success">{{ r.status }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if not students and not events and not registrations and not coordinators and not tickets and not certificates and not posts %}
+<div class="card card-itsa p-5 text-center shadow-sm">
+    <i class="bi bi-search fs-1 text-muted mb-2"></i>
+    <h5>No results matching "{{ search_query }}"</h5>
+    <p class="text-muted small">Try searching with a student name, email, event title, or registration number.</p>
+</div>
+{% endif %}
+{% endblock %}

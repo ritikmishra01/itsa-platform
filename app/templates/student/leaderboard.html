@@ -1,0 +1,80 @@
+﻿{% extends "base.html" %}
+{% block title %}ITSA Leaderboard{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="text-center mb-4">
+        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold mb-2">
+            <i class="bi bi-stars"></i> ITSA Points & Recognition
+        </span>
+        <h2 class="fw-bold">Student Engagement Leaderboard</h2>
+        <p class="text-muted small" style="max-width: 600px; margin: auto;">
+            Points earned by attending events (+10), submitting feedback (+5), registering (+3), and contributing to community feed (+2).
+        </p>
+    </div>
+
+    <!-- Filter Pills -->
+    <div class="d-flex justify-content-center gap-2 mb-4 flex-wrap">
+        <a href="{{ url_for('pages.leaderboard_page') }}" class="btn btn-sm {% if not current_dept %}btn-primary{% else %}btn-outline-secondary{% endif %} rounded-pill px-3">All Departments</a>
+        <a href="{{ url_for('pages.leaderboard_page', department='Computer Science') }}" class="btn btn-sm {% if current_dept == 'Computer Science' %}btn-primary{% else %}btn-outline-secondary{% endif %} rounded-pill px-3">Computer Science</a>
+        <a href="{{ url_for('pages.leaderboard_page', department='Information Technology') }}" class="btn btn-sm {% if current_dept == 'Information Technology' %}btn-primary{% else %}btn-outline-secondary{% endif %} rounded-pill px-3">Information Technology</a>
+        <a href="{{ url_for('pages.leaderboard_page', department='Artificial Intelligence & DS') }}" class="btn btn-sm {% if current_dept == 'Artificial Intelligence & DS' %}btn-primary{% else %}btn-outline-secondary{% endif %} rounded-pill px-3">AI & DS</a>
+    </div>
+
+    <!-- Leaderboard Table -->
+    <div class="card card-itsa shadow-sm overflow-hidden" style="max-width: 900px; margin: auto;">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4" style="width: 80px;">Rank</th>
+                        <th>Student</th>
+                        <th>Department</th>
+                        <th>Year</th>
+                        <th class="text-end pe-4">Total ITSA Points</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if leaderboard %}
+                        {% for entry in leaderboard %}
+                        <tr {% if current_user.is_authenticated and entry.user_id == current_user.id %}class="table-primary fw-bold"{% endif %}>
+                            <td class="ps-4">
+                                {% if entry.rank == 1 %}
+                                <span class="badge bg-warning text-dark fs-6 rounded-circle p-2" style="width: 32px; height: 32px;"><i class="bi bi-trophy-fill"></i></span>
+                                {% elif entry.rank == 2 %}
+                                <span class="badge bg-secondary text-white fs-6 rounded-circle p-2" style="width: 32px; height: 32px;">2</span>
+                                {% elif entry.rank == 3 %}
+                                <span class="badge bg-dark bg-opacity-50 text-white fs-6 rounded-circle p-2" style="width: 32px; height: 32px;">3</span>
+                                {% else %}
+                                <span class="fw-bold text-muted ps-2">{{ entry.rank }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="post-avatar" style="width: 38px; height: 38px; font-size: 0.9rem;">
+                                        {{ entry.full_name[0] }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">{{ entry.full_name }}</div>
+                                        <div class="small text-muted font-monospace">{{ entry.student_id }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ entry.department }}</td>
+                            <td>Year {{ entry.year_of_study }}</td>
+                            <td class="text-end pe-4">
+                                <span class="points-pill"><i class="bi bi-stars"></i> {{ entry.total_points }} pts</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">No student rankings found.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

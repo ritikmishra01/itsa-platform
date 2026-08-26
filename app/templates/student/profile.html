@@ -1,0 +1,105 @@
+﻿{% extends "base.html" %}
+{% block title %}User Profile{% endblock %}
+
+{% block content %}
+<div class="container py-2" style="max-width: 800px;">
+    <h2 class="fw-bold mb-4">Profile Settings</h2>
+
+    <div class="card card-itsa p-4 mb-4 shadow-sm">
+        <h5 class="fw-bold mb-3">Personal & Academic Details</h5>
+        <form id="profileForm">
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Full Name</label>
+                    <input type="text" class="form-control" name="full_name" value="{{ current_user.full_name }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Email Address (Read-only)</label>
+                    <input type="email" class="form-control bg-light" value="{{ current_user.email }}" readonly>
+                </div>
+            </div>
+
+            {% if current_user.is_student and current_user.student_profile %}
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Student ID / Roll No</label>
+                    <input type="text" class="form-control bg-light" value="{{ current_user.student_profile.student_id }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Phone Number</label>
+                    <input type="text" class="form-control" name="phone" value="{{ current_user.student_profile.phone or '' }}">
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Department</label>
+                    <input type="text" class="form-control" name="department" value="{{ current_user.student_profile.department }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Year of Study</label>
+                    <select class="form-select" name="year_of_study">
+                        <option value="1" {% if current_user.student_profile.year_of_study == 1 %}selected{% endif %}>1st Year (FE)</option>
+                        <option value="2" {% if current_user.student_profile.year_of_study == 2 %}selected{% endif %}>2nd Year (SE)</option>
+                        <option value="3" {% if current_user.student_profile.year_of_study == 3 %}selected{% endif %}>3rd Year (TE)</option>
+                        <option value="4" {% if current_user.student_profile.year_of_study == 4 %}selected{% endif %}>4th Year (BE)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label small fw-semibold">Bio / Technical Interests</label>
+                <textarea class="form-control" name="bio" rows="2">{{ current_user.student_profile.bio or '' }}</textarea>
+            </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Save Changes</button>
+        </form>
+    </div>
+
+    <!-- Password Change Card -->
+    <div class="card card-itsa p-4 shadow-sm">
+        <h5 class="fw-bold mb-3">Change Password</h5>
+        <form id="pwForm">
+            <div class="mb-3">
+                <label class="form-label small fw-semibold">Current Password</label>
+                <input type="password" class="form-control" name="old_password" required>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label small fw-semibold">New Password</label>
+                    <input type="password" class="form-control" name="new_password" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Confirm New Password</label>
+                    <input type="password" class="form-control" name="confirm_password" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-key me-1"></i> Update Password</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('profileForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(this));
+    try {
+        await apiCall('/api/v1/auth/profile', 'POST', data);
+        showToast('Profile updated successfully!', 'success');
+    } catch(err) {}
+});
+
+document.getElementById('pwForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(this));
+    try {
+        await apiCall('/api/v1/auth/change-password', 'POST', data);
+        showToast('Password changed successfully!', 'success');
+        this.reset();
+    } catch(err) {}
+});
+</script>
+{% endblock %}

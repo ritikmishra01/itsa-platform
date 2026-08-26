@@ -1,0 +1,57 @@
+﻿{% extends "base.html" %}
+{% block title %}Verify Certificate Authenticity{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6">
+            <div class="card card-itsa p-4 shadow-sm text-center">
+                <div class="bg-primary text-white p-3 rounded-circle d-inline-flex align-items-center justify-content-center mb-3 mx-auto" style="width: 60px; height: 60px;">
+                    <i class="bi bi-patch-check-fill fs-2"></i>
+                </div>
+                <h3 class="fw-bold">Verify Certificate</h3>
+                <p class="text-muted small mb-4">Validate the authenticity of official ITSA event participation & winner certificates</p>
+
+                <form method="GET" action="{{ url_for('pages.verify_certificate_page') }}" class="mb-4">
+                    <div class="input-group input-group-lg">
+                        <input type="text" class="form-control font-monospace" name="code" value="{{ code or '' }}" required placeholder="e.g. ITSA-CERT-uuid">
+                        <button class="btn btn-primary" type="submit">Verify</button>
+                    </div>
+                </form>
+
+                {% if cert_data %}
+                    <div class="alert alert-success text-start p-4 rounded-3 border-success shadow-sm">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <i class="bi bi-check-circle-fill text-success fs-3"></i>
+                            <div>
+                                <h5 class="fw-bold mb-0 text-success">Official Certificate Verified</h5>
+                                <div class="small text-muted font-monospace">{{ cert_data.certificate_code }}</div>
+                            </div>
+                        </div>
+                        <div class="row g-2 border-top pt-3">
+                            <div class="col-sm-4 text-muted small">Student Name:</div>
+                            <div class="col-sm-8 fw-bold">{{ cert_data.student_name }}</div>
+
+                            <div class="col-sm-4 text-muted small">Event Name:</div>
+                            <div class="col-sm-8 fw-bold">{{ cert_data.event_title }}</div>
+
+                            <div class="col-sm-4 text-muted small">Event Date:</div>
+                            <div class="col-sm-8">{{ cert_data.event_date }}</div>
+
+                            <div class="col-sm-4 text-muted small">Certificate Type:</div>
+                            <div class="col-sm-8"><span class="badge bg-primary">{{ cert_data.certificate_type }}</span></div>
+
+                            <div class="col-sm-4 text-muted small">Issued On:</div>
+                            <div class="col-sm-8">{{ cert_data.issued_at }}</div>
+                        </div>
+                    </div>
+                {% elif err_msg %}
+                    <div class="alert alert-danger text-start p-3 rounded-3">
+                        <i class="bi bi-x-circle-fill me-2"></i> {{ err_msg }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

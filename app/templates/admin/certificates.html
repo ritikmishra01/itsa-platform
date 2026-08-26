@@ -1,0 +1,62 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Certificate Center{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item active">Certificate Center</li>
+{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold mb-1">Certificate Management Center</h4>
+        <p class="text-muted small mb-0">All automated ReportLab certificates issued for verified event attendance</p>
+    </div>
+    <a href="{{ url_for('api_admin.export_report_csv', report_type='certificates') }}" class="btn btn-outline-warning text-dark btn-sm fw-semibold">
+        <i class="bi bi-download me-1"></i> Export Certificates CSV
+    </a>
+</div>
+
+<!-- Certificates Table -->
+<div class="card card-itsa overflow-hidden shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">Recipient Student</th>
+                    <th>Event</th>
+                    <th>Certificate ID</th>
+                    <th>Issue Date</th>
+                    <th>Status</th>
+                    <th class="text-end pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if certificates %}
+                    {% for c in certificates %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark">{{ c.user.full_name }}</div>
+                            <div class="small text-muted">{{ c.user.email }}</div>
+                        </td>
+                        <td>{{ c.event.title }}</td>
+                        <td class="font-monospace small text-primary fw-semibold">{{ c.certificate_code }}</td>
+                        <td class="small">{{ c.issued_at.strftime('%b %d, %Y') }}</td>
+                        <td><span class="badge bg-success">Verified & Valid</span></td>
+                        <td class="text-end pe-4">
+                            <a href="{{ url_for('pages.verify_certificate_page') }}?code={{ c.certificate_code }}" target="_blank" class="btn btn-sm btn-outline-primary me-1">
+                                <i class="bi bi-patch-check me-1"></i> Verify
+                            </a>
+                            <a href="{{ url_for('api_certificates.download_certificate', cert_id=c.id) }}" class="btn btn-sm btn-light border">
+                                <i class="bi bi-download"></i> PDF
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="6" class="text-center py-4 text-muted">No certificates generated yet.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

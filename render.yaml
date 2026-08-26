@@ -1,0 +1,40 @@
+﻿services:
+  - type: web
+    name: itsa-platform
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: "pip install --upgrade pip && pip install -r requirements.txt"
+    startCommand: "gunicorn \"run:app\" --workers 4 --bind 0.0.0.0:$PORT --timeout 120 --access-logfile - --error-logfile -"
+    preDeployCommand: "python scripts/init_prod_admin.py"
+    healthCheckPath: /health
+    autoDeploy: true
+    disk:
+      name: itsa-uploads
+      mountPath: /var/data/uploads
+      sizeGB: 5
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.8
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: UPLOAD_FOLDER
+        value: /var/data/uploads
+      - key: DATABASE_URL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.0-flash
+      - key: FRONTEND_URL
+        sync: false
+      - key: ADMIN_EMAIL
+        value: admin@itsa.edu
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_NAME
+        value: "ITSA Administrator"

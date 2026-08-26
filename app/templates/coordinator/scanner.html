@@ -1,0 +1,181 @@
+﻿{% extends "base.html" %}
+{% block title %}QR Attendance Scanner - {{ event.title }}{% endblock %}
+
+{% block extra_head %}
+<!-- HTML5-QRCode Scanner Library -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <span class="badge bg-warning text-dark fw-bold mb-1">Live Entry Gate</span>
+            <h3 class="fw-bold mb-0">{{ event.title }} - QR Check-in</h3>
+        </div>
+        <a href="{{ url_for('pages.coordinator_dashboard') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Hub
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <!-- Scanner Camera Column -->
+        <div class="col-lg-6">
+            <div class="card card-itsa p-4 text-center shadow-sm">
+                <h5 class="fw-bold mb-3"><i class="bi bi-camera text-primary me-2"></i> Scan Student QR Ticket</h5>
+
+                <div id="qr-reader" class="mx-auto mb-3" style="max-width: 420px; min-height: 280px;"></div>
+
+                <div class="d-flex justify-content-center gap-2 mb-3">
+                    <button id="btnStartScan" class="btn btn-sm btn-primary"><i class="bi bi-play-fill me-1"></i> Start Camera</button>
+                    <button id="btnStopScan" class="btn btn-sm btn-outline-secondary" disabled><i class="bi bi-stop-fill me-1"></i> Stop Camera</button>
+                </div>
+
+                <!-- Manual Fallback Input -->
+                <div class="border-top pt-3 text-start">
+                    <label class="form-label small fw-semibold text-muted">Manual Ticket Code Entry (Fallback)</label>
+                    <form id="manualScanForm" class="d-flex gap-2">
+                        <input type="text" id="manualCode" class="form-control font-monospace form-control-sm" placeholder="ITSA-TKT-..." required>
+                        <button type="submit" class="btn btn-sm btn-outline-primary">Check In</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Scan Feed & Statistics -->
+        <div class="col-lg-6">
+            <!-- Scan Status Alert Box -->
+            <div id="scanResultAlert" class="alert alert-light border p-4 mb-4 text-center shadow-sm rounded-3">
+                <i class="bi bi-qr-code text-muted fs-1 mb-2 d-block"></i>
+                <h6 class="fw-bold text-muted mb-1">Scanner Ready</h6>
+                <p class="small text-muted mb-0">Point the camera at student's ticket QR or enter code manually.</p>
+            </div>
+
+            <!-- Recent Check-ins List -->
+            <div class="card card-itsa p-4 shadow-sm">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-clock-history text-success me-2"></i> Recent Check-ins</h6>
+                    <a href="{{ url_for('pages.coordinator_attendance', event_id=event.id) }}" class="small text-primary text-decoration-none">Full Log &rarr;</a>
+                </div>
+                <div class="list-group list-group-flush" id="recentCheckinsList">
+                    {% if recent_attendances %}
+                        {% for att in recent_attendances %}
+                        <div class="list-group-item px-0 py-2 border-bottom d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="fw-bold">{{ att.student.full_name }}</span>
+                                <div class="small text-muted font-monospace">{{ att.student.student_profile.student_id if att.student.student_profile else '' }}</div>
+                            </div>
+                            <span class="badge bg-success">{{ att.scanned_at.strftime('%I:%M:%S %p') }}</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4 text-muted small" id="noCheckinsMsg">
+                            No attendees checked in yet for this session.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let html5QrCode = null;
+const eventId = {{ event.id }};
+let isProcessing = false;
+
+async function processTicketCode(code) {
+    if (isProcessing) return;
+    isProcessing = true;
+
+    const alertBox = document.getElementById('scanResultAlert');
+    alertBox.className = 'alert alert-info border p-4 mb-4 text-center shadow-sm rounded-3';
+    alertBox.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Validating ticket with backend...';
+
+    try {
+        const res = await apiCall('/api/v1/attendance/scan', 'POST', {
+            ticket_code: code,
+            event_id: eventId
+        });
+
+        alertBox.className = 'alert alert-success border-success p-4 mb-4 text-center shadow-sm rounded-3';
+        alertBox.innerHTML = `
+            <i class="bi bi-check-circle-fill text-success fs-1 mb-2 d-block"></i>
+            <h5 class="fw-bold text-success mb-1">Check-in Verified!</h5>
+            <div class="fw-bold text-dark fs-5">${res.data.student_name}</div>
+            <div class="small text-muted">ID: ${res.data.student_id || ''} &bull; ${res.data.department || ''}</div>
+            <div class="badge bg-warning text-dark mt-2">+10 ITSA Points Awarded & Cert Generated</div>
+        `;
+
+        // Prepend to recent check-ins
+        const list = document.getElementById('recentCheckinsList');
+        const noMsg = document.getElementById('noCheckinsMsg');
+        if (noMsg) noMsg.remove();
+
+        const newItem = document.createElement('div');
+        newItem.className = 'list-group-item px-0 py-2 border-bottom d-flex justify-content-between align-items-center bg-light';
+        newItem.innerHTML = `
+            <div>
+                <span class="fw-bold text-success">${res.data.student_name}</span>
+                <div class="small text-muted font-monospace">${res.data.student_id || ''}</div>
+            </div>
+            <span class="badge bg-success">${new Date().toLocaleTimeString()}</span>
+        `;
+        list.prepend(newItem);
+
+    } catch (err) {
+        alertBox.className = 'alert alert-danger border-danger p-4 mb-4 text-center shadow-sm rounded-3';
+        alertBox.innerHTML = `
+            <i class="bi bi-x-circle-fill text-danger fs-1 mb-2 d-block"></i>
+            <h5 class="fw-bold text-danger mb-1">Attendance Rejected</h5>
+            <div class="text-dark small">${err.message}</div>
+        `;
+    } finally {
+        setTimeout(() => { isProcessing = false; }, 2000);
+    }
+}
+
+document.getElementById('btnStartScan').addEventListener('click', async function() {
+    this.disabled = true;
+    document.getElementById('btnStopScan').disabled = false;
+
+    if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("qr-reader");
+    }
+
+    try {
+        await html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            (decodedText) => {
+                processTicketCode(decodedText);
+            },
+            (err) => {}
+        );
+    } catch(e) {
+        showToast("Camera permission denied or camera not accessible.", "danger");
+        this.disabled = false;
+        document.getElementById('btnStopScan').disabled = true;
+    }
+});
+
+document.getElementById('btnStopScan').addEventListener('click', async function() {
+    if (html5QrCode) {
+        await html5QrCode.stop();
+    }
+    this.disabled = true;
+    document.getElementById('btnStartScan').disabled = false;
+});
+
+document.getElementById('manualScanForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const code = document.getElementById('manualCode').value.trim();
+    if (code) {
+        processTicketCode(code);
+        document.getElementById('manualCode').value = '';
+    }
+});
+</script>
+{% endblock %}

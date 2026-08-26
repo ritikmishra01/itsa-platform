@@ -1,0 +1,130 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Notifications & Broadcast{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item active">Broadcast & Notifications</li>
+{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold mb-1">Broadcast & Notification Center</h4>
+        <p class="text-muted small mb-0">Dispatch official announcements to all students, coordinators, specific branches, or event attendees</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Broadcast Form Card -->
+    <div class="col-lg-5">
+        <div class="card card-itsa p-4 shadow-sm">
+            <h5 class="fw-bold mb-3"><i class="bi bi-megaphone text-danger me-2"></i> Compose Announcement</h5>
+            <form id="broadcastForm">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Announcement Title *</label>
+                    <input type="text" class="form-control" name="title" required placeholder="e.g. ITSA Flagship Hackathon Registrations Open!">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Target Audience *</label>
+                    <select class="form-select" name="audience" id="audienceSelect" onchange="toggleAudienceOptions(this.value)">
+                        <option value="ALL_STUDENTS">All Active Students</option>
+                        <option value="ALL_COORDINATORS">All Coordinators</option>
+                        <option value="ALL_USERS">All Users (Students & Coordinators)</option>
+                        <option value="DEPT">Specific Department</option>
+                        <option value="YEAR">Specific Year of Study</option>
+                        <option value="EVENT">Event Registered Participants</option>
+                    </select>
+                </div>
+
+                <div class="mb-3" id="deptSelectWrap" style="display: none;">
+                    <label class="form-label small fw-semibold">Select Department</label>
+                    <select class="form-select" name="department">
+                        {% for d in departments %}<option value="{{ d }}">{{ d }}</option>{% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3" id="yearSelectWrap" style="display: none;">
+                    <label class="form-label small fw-semibold">Select Year</label>
+                    <select class="form-select" name="year">
+                        <option value="1">1st Year</option>
+                        <option value="2">2nd Year</option>
+                        <option value="3">3rd Year</option>
+                        <option value="4">4th Year</option>
+                    </select>
+                </div>
+
+                <div class="mb-3" id="eventSelectWrap" style="display: none;">
+                    <label class="form-label small fw-semibold">Select Event</label>
+                    <select class="form-select" name="event_id">
+                        {% for e in events %}<option value="{{ e.id }}">{{ e.title }}</option>{% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Message Body *</label>
+                    <textarea class="form-control" name="message" rows="4" required placeholder="Type the full announcement details here..."></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-danger w-100 fw-semibold" id="btnBroadcastSubmit">
+                    <i class="bi bi-send-fill me-1"></i> Send Announcement Broadcast
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification History Log -->
+    <div class="col-lg-7">
+        <div class="card card-itsa p-4 shadow-sm h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-clock-history text-primary me-2"></i> Sent Notifications Log</h5>
+                <span class="badge bg-light text-dark border">{{ notifications|length }} logged</span>
+            </div>
+            <div class="list-group list-group-flush overflow-auto" style="max-height: 540px;">
+                {% if notifications %}
+                    {% for n in notifications %}
+                    <div class="list-group-item px-0 py-3 border-bottom">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <h6 class="fw-bold mb-0 text-dark">{{ n.title }}</h6>
+                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary">{{ n.type }}</span>
+                        </div>
+                        <p class="small text-muted mb-2">{{ n.message }}</p>
+                        <div class="d-flex justify-content-between align-items-center text-muted" style="font-size: 0.75rem;">
+                            <span><i class="bi bi-person me-1"></i> Recipient: <strong>{{ n.recipient.full_name if n.recipient else (n.user.full_name if n.user else 'Unknown User') }}</strong> ({{ n.recipient.email if n.recipient else (n.user.email if n.user else 'N/A') }})</span>
+                            <span><i class="bi bi-clock me-1"></i> {{ n.created_at.strftime('%b %d, %Y %I:%M %p') }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5 text-muted small">No notifications dispatched yet.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function toggleAudienceOptions(val) {
+    document.getElementById('deptSelectWrap').style.display = (val === 'DEPT') ? 'block' : 'none';
+    document.getElementById('yearSelectWrap').style.display = (val === 'YEAR') ? 'block' : 'none';
+    document.getElementById('eventSelectWrap').style.display = (val === 'EVENT') ? 'block' : 'none';
+}
+
+document.getElementById('broadcastForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    if (!confirm('Are you sure you want to broadcast this announcement to the selected audience?')) return;
+    const btn = document.getElementById('btnBroadcastSubmit');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Dispatching...';
+    const data = Object.fromEntries(new FormData(this));
+    try {
+        const res = await apiCall('/api/v1/admin/notifications/broadcast', 'POST', data);
+        showToast(res.message || 'Broadcast dispatched successfully!', 'success');
+        setTimeout(() => window.location.reload(), 600);
+    } catch(err) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-send-fill me-1"></i> Send Announcement Broadcast';
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,207 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ event.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('pages.home') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('pages.events_page') }}">Events</a></li>
+            <li class="breadcrumb-item active">{{ event.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row g-4">
+        <!-- Event Details Column -->
+        <div class="col-lg-8">
+            <div class="card card-itsa p-4 mb-4">
+                {% if event.poster_image %}
+                <img src="{{ url_for('pages.serve_upload', filename=event.poster_image.replace('uploads/', '')) }}" class="rounded-3 mb-4 w-100 object-fit-cover shadow-sm" style="max-height: 380px;" alt="{{ event.title }}">
+                {% endif %}
+
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="badge bg-primary fs-6">{{ event.category.name if event.category else 'General' }}</span>
+                    <span class="badge bg-dark fs-6">{{ event.status }}</span>
+                    {% if event.is_free %}
+                    <span class="badge bg-success fs-6">Free Entry</span>
+                    {% else %}
+                    <span class="badge bg-info fs-6">Fee: ₹{{ event.registration_fee }}</span>
+                    {% endif %}
+                </div>
+
+                <h2 class="fw-bold mb-3">{{ event.title }}</h2>
+
+                <div class="row g-3 py-3 border-top border-bottom my-3 bg-light rounded-3 px-2">
+                    <div class="col-sm-6 col-md-3">
+                        <div class="small text-muted"><i class="bi bi-calendar-event me-1"></i> Date</div>
+                        <div class="fw-semibold">{{ event.start_datetime.strftime('%b %d, %Y') }}</div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <div class="small text-muted"><i class="bi bi-clock me-1"></i> Time</div>
+                        <div class="fw-semibold">{{ event.start_datetime.strftime('%I:%M %p') }}</div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <div class="small text-muted"><i class="bi bi-geo-alt me-1"></i> Venue</div>
+                        <div class="fw-semibold">{{ event.venue.name if event.venue else 'TBA' }}</div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <div class="small text-muted"><i class="bi bi-hourglass-split me-1"></i> Deadline</div>
+                        <div class="fw-semibold">{{ event.registration_deadline.strftime('%b %d') }}</div>
+                    </div>
+                </div>
+
+                <h5 class="fw-bold mt-4 mb-3">About This Event</h5>
+                <div class="text-secondary lh-lg mb-4" style="white-space: pre-line;">
+                    {{ event.description }}
+                </div>
+
+                {% if event.tags %}
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-2">Tags</h6>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for tag in event.tags.split(',') %}
+                        <span class="badge bg-light text-dark border">#{{ tag.strip() }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Feedback Section if Attended -->
+            {% if user_attended %}
+            <div class="card card-itsa p-4 mb-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-star-fill text-warning me-2"></i> Submit Event Feedback</h5>
+                <form id="feedbackForm">
+                    <input type="hidden" name="event_id" value="{{ event.id }}">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Overall Rating (1 to 5 Stars) *</label>
+                        <select class="form-select" name="rating" required>
+                            <option value="5">⭐⭐⭐⭐⭐ (5 - Excellent)</option>
+                            <option value="4">⭐⭐⭐⭐ (4 - Very Good)</option>
+                            <option value="3">⭐⭐⭐ (3 - Good)</option>
+                            <option value="2">⭐⭐ (2 - Fair)</option>
+                            <option value="1">⭐ (1 - Poor)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">What did you like best?</label>
+                        <textarea class="form-control" name="content" rows="2" placeholder="Your thoughts on content, speakers, organization..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Suggestions for improvement</label>
+                        <textarea class="form-control" name="suggestions" rows="2" placeholder="How can we make future events better?"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-send me-1"></i> Submit Feedback (+5 Points)</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Registration / Action Column -->
+        <div class="col-lg-4">
+            <div class="card card-itsa p-4 sticky-top" style="top: 90px;">
+                <h5 class="fw-bold mb-3">Registration Status</h5>
+
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Capacity:</span>
+                    <span class="fw-bold">{{ event.max_participants if event.max_participants else 'Unlimited' }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <span class="text-muted">Registered:</span>
+                    <span class="fw-bold text-primary">{{ event.current_registrations }}</span>
+                </div>
+
+                {% if event.max_participants %}
+                <div class="progress mb-4" style="height: 8px;">
+                    {% set pct = (event.current_registrations / event.max_participants * 100)|int %}
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ pct }}%"></div>
+                </div>
+                {% endif %}
+
+                {% if user_registered %}
+                    <div class="alert alert-success d-flex align-items-center gap-2 mb-3">
+                        <i class="bi bi-check-circle-fill fs-5"></i>
+                        <div>
+                            <div class="fw-bold">You are Registered!</div>
+                            <div class="small">Ticket generated successfully</div>
+                        </div>
+                    </div>
+
+                    {% if user_ticket %}
+                    <div class="text-center p-3 border rounded-3 bg-light mb-3">
+                        <div class="small text-muted mb-2">Digital QR Ticket</div>
+                        <img src="{{ url_for('pages.serve_upload', filename=user_ticket.qr_image_path.replace('uploads/', '')) }}" class="img-fluid rounded border mb-2" style="max-width: 160px;" alt="QR Ticket">
+                        <div class="font-monospace small fw-bold">{{ user_ticket.ticket_code }}</div>
+                        <div class="small text-muted mt-1">Show this QR to the coordinator at venue gate</div>
+                    </div>
+                    {% endif %}
+
+                    {% if user_attended %}
+                    <div class="alert alert-primary d-flex align-items-center gap-2">
+                        <i class="bi bi-patch-check-fill fs-5 text-primary"></i>
+                        <div>
+                            <div class="fw-bold">Attendance Verified</div>
+                            <a href="{{ url_for('pages.my_certificates') }}" class="small fw-semibold text-primary">Download Certificate</a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                {% elif not current_user.is_authenticated %}
+                    <p class="text-muted small mb-3">Please sign in as a student to register and receive your digital QR entry ticket.</p>
+                    <a href="{{ url_for('pages.login_page') }}" class="btn btn-primary w-100 mb-2">Log In to Register</a>
+                    <a href="{{ url_for('pages.register_page') }}" class="btn btn-outline-primary w-100">Create Student Account</a>
+                {% elif not current_user.is_student %}
+                    <div class="alert alert-warning small">
+                        Logged in as <b>{{ current_user.role }}</b>. Registrations are reserved for students.
+                    </div>
+                {% elif event.status != 'REGISTRATION_OPEN' %}
+                    <div class="alert alert-secondary text-center">
+                        Registration is currently <b>{{ event.status }}</b>.
+                    </div>
+                {% else %}
+                    <button id="btnRegister" class="btn btn-primary btn-lg w-100 shadow">
+                        <i class="bi bi-ticket-perforated me-2"></i> Register for Event
+                    </button>
+                    <div class="form-text text-center mt-2 small text-muted">
+                        Earn +3 ITSA Points on confirmed registration
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const btnReg = document.getElementById('btnRegister');
+if (btnReg) {
+    btnReg.addEventListener('click', async function() {
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Registering...';
+        try {
+            await apiCall('/api/v1/events/{{ event.id }}/register', 'POST');
+            showToast('Registration successful! Reloading ticket...', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } catch (err) {
+            this.disabled = false;
+            this.innerHTML = '<i class="bi bi-ticket-perforated me-2"></i> Register for Event';
+        }
+    });
+}
+
+const fbForm = document.getElementById('feedbackForm');
+if (fbForm) {
+    fbForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(this));
+        try {
+            await apiCall('/api/v1/feedback', 'POST', data);
+            showToast('Thank you! Feedback recorded (+5 ITSA points)', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } catch (err) {}
+    });
+}
+</script>
+{% endblock %}

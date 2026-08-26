@@ -1,0 +1,243 @@
+﻿import os
+
+TEMPLATES_DIR = r"C:\Users\ritik\.gemini\antigravity\scratch\itsa-platform\app\templates\admin"
+os.makedirs(TEMPLATES_DIR, exist_ok=True)
+
+views = {}
+
+# 1. dashboard.html
+views['dashboard.html'] = """{% extends "admin/base_admin.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item active">Dashboard Overview</li>
+{% endblock %}
+
+{% block admin_content %}
+<!-- 8 Clickable Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('pages.admin_users') }}?role=STUDENT" class="card card-itsa p-3 clickable-card border-start border-4 border-primary">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold">Total Students</div>
+                    <h3 class="fw-bold mb-0 text-primary">{{ metrics.total_students }}</h3>
+                </div>
+                <div class="bg-primary bg-opacity-10 text-primary p-2 rounded-circle"><i class="bi bi-people fs-4"></i></div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('pages.admin_coordinators') }}" class="card card-itsa p-3 clickable-card border-start border-4 border-warning">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold">Coordinators</div>
+                    <h3 class="fw-bold mb-0 text-warning">{{ metrics.total_coordinators }}</h3>
+                </div>
+                <div class="bg-warning bg-opacity-10 text-warning p-2 rounded-circle"><i class="bi bi-person-badge fs-4"></i></div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('pages.admin_events') }}" class="card card-itsa p-3 clickable-card border-start border-4 border-success">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold">Total Events</div>
+                    <h3 class="fw-bold mb-0 text-success">{{ metrics.total_events }}</h3>
+                </div>
+                <div class="bg-success bg-opacity-10 text-success p-2 rounded-circle"><i class="bi bi-calendar-event fs-4"></i></div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('pages.admin_events') }}?status=REGISTRATION_OPEN" class="card card-itsa p-3 clickable-card border-start border-4 border-info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold">Upcoming / Open</div>
+                    <h3 class="fw-bold mb-0 text-info">{{ metrics.upcoming_events_count }}</h3>
+                </div>
+                <div class="bg-info bg-opacity-10 text-info p-2 rounded-circle"><i class="bi bi-clock-history fs-4"></i></div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('pages.admin_registrations') }}" class="card card-itsa p-3 clickable-card border-start border-4 border-primary">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold">Registrations</div>
+                    <h3 class="fw-bold mb-0 text-primary">{{ metrics.total_registrations }}</h3>
+                </div>
+                <div class="bg-primary bg-opacity-10 text-primary p-2 rounded-circle"><i class="bi bi-ticket-perforated fs-4"></i></div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('pages.admin_attendance') }}" class="card card-itsa p-3 clickable-card border-start border-4 border-success">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold">Verified Attendees</div>
+                    <h3 class="fw-bold mb-0 text-success">{{ metrics.total_attendances }}</h3>
+                </div>
+                <div class="bg-success bg-opacity-10 text-success p-2 rounded-circle"><i class="bi bi-qr-code-scan fs-4"></i></div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('pages.admin_certificates') }}" class="card card-itsa p-3 clickable-card border-start border-4 border-warning">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold">Certificates Issued</div>
+                    <h3 class="fw-bold mb-0 text-warning">{{ metrics.total_certificates }}</h3>
+                </div>
+                <div class="bg-warning bg-opacity-10 text-warning p-2 rounded-circle"><i class="bi bi-award fs-4"></i></div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('pages.admin_community') }}" class="card card-itsa p-3 clickable-card border-start border-4 border-danger">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold">Community Posts</div>
+                    <h3 class="fw-bold mb-0 text-danger">{{ metrics.total_posts }}</h3>
+                </div>
+                <div class="bg-danger bg-opacity-10 text-danger p-2 rounded-circle"><i class="bi bi-chat-heart fs-4"></i></div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Upcoming Events Section -->
+    <div class="col-lg-8">
+        <div class="card card-itsa p-4 shadow-sm h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-calendar-check text-primary me-2"></i> Upcoming & Active Events</h5>
+                <a href="{{ url_for('pages.admin_events') }}" class="small text-primary text-decoration-none fw-semibold">View All &rarr;</a>
+            </div>
+            
+            <div class="row g-3">
+                {% if upcoming_events %}
+                    {% for event in upcoming_events %}
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded-3 bg-white h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge bg-light text-dark border">{{ event.category.name if event.category else 'General' }}</span>
+                                    <span class="badge {% if event.status == 'REGISTRATION_OPEN' %}bg-success{% elif event.status == 'ONGOING' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                        {{ event.status }}
+                                    </span>
+                                </div>
+                                <h6 class="fw-bold mb-1 text-truncate">{{ event.title }}</h6>
+                                <div class="small text-muted mb-1"><i class="bi bi-geo-alt me-1"></i> {{ event.venue.name if event.venue else 'TBA' }}</div>
+                                <div class="small text-muted mb-2"><i class="bi bi-clock me-1"></i> {{ event.start_datetime.strftime('%b %d, %Y - %I:%M %p') }}</div>
+                                <div class="small text-muted mb-3">
+                                    <span class="fw-semibold text-dark">{{ event.current_registrations }}</span> / {{ event.max_participants if event.max_participants else '∞' }} registered
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="{{ url_for('pages.event_detail', event_id=event.id) }}" class="btn btn-sm btn-light border flex-fill">View</a>
+                                <a href="{{ url_for('pages.admin_registrations') }}?event_id={{ event.id }}" class="btn btn-sm btn-outline-primary flex-fill">Registrations</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12 text-center py-4 text-muted">No upcoming events scheduled.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity Feed -->
+    <div class="col-lg-4">
+        <div class="card card-itsa p-4 shadow-sm h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-activity text-danger me-2"></i> Recent Activity</h5>
+                <a href="{{ url_for('pages.admin_audit_logs') }}" class="small text-muted text-decoration-none">Audit &rarr;</a>
+            </div>
+            <div class="list-group list-group-flush">
+                {% if recent_activities %}
+                    {% for act in recent_activities %}
+                    <div class="list-group-item px-0 py-2 border-bottom d-flex align-items-start gap-2">
+                        <div class="{{ act.badge }} text-white p-1 rounded-circle mt-1 d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 0.75rem;">
+                            <i class="bi {{ act.icon }}"></i>
+                        </div>
+                        <div class="flex-fill">
+                            <div class="small fw-semibold text-dark">{{ act.action }}</div>
+                            <div class="d-flex justify-content-between align-items-center text-muted" style="font-size: 0.75rem;">
+                                <span>{{ act.user }}</span>
+                                <span>{{ act.timestamp.strftime('%H:%M') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4 text-muted small">No recent activity logged yet.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js Quick Visuals -->
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card card-itsa p-4 shadow-sm">
+            <h6 class="fw-bold mb-3"><i class="bi bi-pie-chart text-primary me-2"></i> Events by Category</h6>
+            <div style="height: 250px; position: relative;">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card card-itsa p-4 shadow-sm">
+            <h6 class="fw-bold mb-3"><i class="bi bi-bar-chart text-success me-2"></i> Department Participation</h6>
+            <div style="height: 250px; position: relative;">
+                <canvas id="deptChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+const catLabels = {{ metrics.charts.categories.labels | tojson }};
+const catData = {{ metrics.charts.categories.data | tojson }};
+const deptLabels = {{ metrics.charts.departments.labels | tojson }};
+const deptData = {{ metrics.charts.departments.data | tojson }};
+
+new Chart(document.getElementById('categoryChart'), {
+    type: 'doughnut',
+    data: {
+        labels: catLabels,
+        datasets: [{
+            data: catData,
+            backgroundColor: ['#1a73e8', '#34a853', '#fbbc04', '#ea4335', '#9334e8', '#12b5cb', '#f29900', '#5f6368']
+        }]
+    },
+    options: { responsive: true, maintainAspectRatio: false }
+});
+
+new Chart(document.getElementById('deptChart'), {
+    type: 'bar',
+    data: {
+        labels: deptLabels,
+        datasets: [{
+            label: 'Attendees',
+            data: deptData,
+            backgroundColor: '#1a73e8'
+        }]
+    },
+    options: { responsive: true, maintainAspectRatio: false }
+});
+</script>
+{% endblock %}
+"""
+
+for fname, content in views.items():
+    with open(os.path.join(TEMPLATES_DIR, fname), 'w', encoding='utf-8') as f:
+        f.write(content)
+
+print(f"Wrote {len(views)} admin view templates.")

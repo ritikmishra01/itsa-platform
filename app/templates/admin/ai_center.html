@@ -1,0 +1,101 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}AI Intelligence Center{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item active">AI Intelligence Center</li>
+{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="bi bi-robot text-primary me-2"></i> Gemini AI & ML Intelligence Hub</h4>
+        <p class="text-muted small mb-0">Test LLM prompt pipelines, run automated sentiment analysis on feedback, and inspect recommendation vectors</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Feedback Sentiment Analyzer -->
+    <div class="col-lg-6">
+        <div class="card card-itsa p-4 shadow-sm h-100">
+            <h5 class="fw-bold mb-3"><i class="bi bi-bar-chart-steps text-success me-2"></i> Feedback Sentiment Analyzer</h5>
+            <div class="mb-3">
+                <label class="form-label small fw-semibold">Select Event to Analyze</label>
+                <select class="form-select" id="aiFeedbackEventSelect">
+                    {% for e in events %}<option value="{{ e.id }}">{{ e.title }}</option>{% endfor %}
+                </select>
+            </div>
+            <button class="btn btn-success btn-sm w-100 mb-3" id="btnRunSentiment">
+                <i class="bi bi-magic me-1"></i> Run Gemini Feedback Sentiment Engine
+            </button>
+            <div id="sentimentResult" class="p-3 bg-light rounded-3 small text-muted">
+                Select an event above and click Run to generate sentiment breakdown and executive summary.
+            </div>
+        </div>
+    </div>
+
+    <!-- Registration Turnout Predictor -->
+    <div class="col-lg-6">
+        <div class="card card-itsa p-4 shadow-sm h-100">
+            <h5 class="fw-bold mb-3"><i class="bi bi-graph-up-arrow text-primary me-2"></i> ML Turnout Predictor</h5>
+            <div class="mb-3">
+                <label class="form-label small fw-semibold">Select Event for Turnout Regression</label>
+                <select class="form-select" id="aiPredictEventSelect">
+                    {% for e in events %}<option value="{{ e.id }}">{{ e.title }}</option>{% endfor %}
+                </select>
+            </div>
+            <button class="btn btn-primary btn-sm w-100 mb-3" id="btnRunPredict">
+                <i class="bi bi-cpu me-1"></i> Predict Registration Attendance
+            </button>
+            <div id="predictResult" class="p-3 bg-light rounded-3 small text-muted">
+                Select an event above and click Predict to calculate estimated student registrations based on historical signals.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('btnRunSentiment').addEventListener('click', async function() {
+    const eventId = document.getElementById('aiFeedbackEventSelect').value;
+    if (!eventId) return;
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Analyzing...';
+    try {
+        const res = await apiCall(`/api/v1/ai/analyze-feedback/${eventId}`, 'POST');
+        document.getElementById('sentimentResult').innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-${res.data.sentiment === 'POSITIVE' ? 'success' : (res.data.sentiment === 'NEGATIVE' ? 'danger' : 'warning')}">${res.data.sentiment}</span>
+                <span class="fw-bold text-dark">${res.data.score}/100 Score</span>
+            </div>
+            <p class="mb-2"><strong>Summary:</strong> ${res.data.summary}</p>
+        `;
+        showToast('Gemini feedback analysis complete!', 'success');
+    } catch(err) {
+    } finally {
+        this.disabled = false;
+        this.innerHTML = '<i class="bi bi-magic me-1"></i> Run Gemini Feedback Sentiment Engine';
+    }
+});
+
+document.getElementById('btnRunPredict').addEventListener('click', async function() {
+    const eventId = document.getElementById('aiPredictEventSelect').value;
+    if (!eventId) return;
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Calculating ML regression...';
+    try {
+        const res = await apiCall(`/api/v1/ai/predict-registrations/${eventId}`, 'GET');
+        document.getElementById('predictResult').innerHTML = `
+            <div class="fw-bold fs-5 text-primary mb-1">Predicted Turnout: ${res.data.predicted_registrations} students</div>
+            <div class="small text-muted mb-2">Confidence Level: <span class="badge bg-info text-dark">${res.data.confidence}</span></div>
+            <p class="mb-0 small">${res.data.factors_considered.join(' &bull; ')}</p>
+        `;
+        showToast('Turnout prediction complete!', 'success');
+    } catch(err) {
+    } finally {
+        this.disabled = false;
+        this.innerHTML = '<i class="bi bi-cpu me-1"></i> Predict Registration Attendance';
+    }
+});
+</script>
+{% endblock %}

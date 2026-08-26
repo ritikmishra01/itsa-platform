@@ -1,0 +1,101 @@
+﻿{% extends "base.html" %}
+{% block title %}Student Registration{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6">
+            <div class="card card-itsa p-4 shadow-sm">
+                <div class="text-center mb-4">
+                    <div class="bg-primary text-white p-3 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 56px; height: 56px;">
+                        <i class="bi bi-person-plus-fill fs-3"></i>
+                    </div>
+                    <h3 class="fw-bold">Join ITSA Community</h3>
+                    <p class="text-muted small">Create your student profile to register for events & earn points</p>
+                </div>
+
+                <form id="registerForm">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Full Name *</label>
+                            <input type="text" class="form-control" name="full_name" required placeholder="e.g. Rahul Sharma">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Student ID / Roll No *</label>
+                            <input type="text" class="form-control" name="student_id" required placeholder="e.g. CS2023001">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">College Email Address *</label>
+                        <input type="email" class="form-control" name="email" required placeholder="rahul@college.edu">
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Department *</label>
+                            <select class="form-select" name="department" required>
+                                <option value="">Select Department</option>
+                                <option value="Computer Science">Computer Science</option>
+                                <option value="Information Technology">Information Technology</option>
+                                <option value="Artificial Intelligence & DS">Artificial Intelligence & DS</option>
+                                <option value="Electronics & Telecom">Electronics & Telecom</option>
+                                <option value="Cyber Security">Cyber Security</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Year of Study *</label>
+                            <select class="form-select" name="year_of_study" required>
+                                <option value="1">1st Year (FE)</option>
+                                <option value="2">2nd Year (SE)</option>
+                                <option value="3">3rd Year (TE)</option>
+                                <option value="4">4th Year (BE)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Password *</label>
+                        <input type="password" class="form-control" name="password" required placeholder="Minimum 8 characters (1 upper, 1 lower, 1 digit)">
+                        <div class="form-text small">At least 8 characters with uppercase, lowercase, and numbers.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-semibold">Technical Interests (Optional)</label>
+                        <input type="text" class="form-control" name="bio" placeholder="e.g. Web Development, Cloud, AI/ML, Cybersecurity">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 mb-3">
+                        <i class="bi bi-check-circle me-2"></i> Complete Registration
+                    </button>
+                </form>
+
+                <div class="text-center border-top pt-3 small text-muted">
+                    Already registered? <a href="{{ url_for('pages.login_page') }}" class="text-primary fw-semibold text-decoration-none">Log in here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('registerForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+
+    try {
+        const res = await apiCall('/api/v1/auth/register', 'POST', data);
+        showToast('Registration successful! Welcome to ITSA.', 'success');
+        setTimeout(() => {
+            window.location.href = "{{ url_for('pages.student_dashboard') }}";
+        }, 1000);
+    } catch (err) {
+        // Handled in apiCall
+    }
+});
+</script>
+{% endblock %}

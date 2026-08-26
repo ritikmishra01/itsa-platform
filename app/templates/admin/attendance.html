@@ -1,0 +1,79 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}QR Attendance Center{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item active">QR Attendance Roster</li>
+{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold mb-1">QR Attendance Verification Records</h4>
+        <p class="text-muted small mb-0">Audited check-in scans performed by authorized coordinators</p>
+    </div>
+    <a href="{{ url_for('api_admin.export_report_csv', report_type='attendance') }}" class="btn btn-outline-success btn-sm">
+        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export Attendance CSV
+    </a>
+</div>
+
+<!-- Attendance Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card card-itsa p-3 border-start border-4 border-success">
+            <div class="text-muted small fw-semibold">Total Verified Attendees</div>
+            <h3 class="fw-bold mb-0 text-success">{{ total_attended }}</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-itsa p-3 border-start border-4 border-primary">
+            <div class="text-muted small fw-semibold">Confirmed Registrations</div>
+            <h3 class="fw-bold mb-0 text-primary">{{ total_registered }}</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-itsa p-3 border-start border-4 border-info">
+            <div class="text-muted small fw-semibold">Overall Attendance Rate</div>
+            <h3 class="fw-bold mb-0 text-info">{{ attendance_rate }}%</h3>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Records Table -->
+<div class="card card-itsa overflow-hidden shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">Student</th>
+                    <th>Student ID</th>
+                    <th>Event</th>
+                    <th>Ticket Code</th>
+                    <th>Scanned By</th>
+                    <th>Timestamp</th>
+                    <th class="text-end pe-4">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if records %}
+                    {% for r in records %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark">{{ r.student.full_name }}</div>
+                            <div class="small text-muted">{{ r.student.email }}</div>
+                        </td>
+                        <td class="font-monospace small">{{ r.student.student_profile.student_id if r.student.student_profile else '-' }}</td>
+                        <td>{{ r.event.title }}</td>
+                        <td class="font-monospace small text-muted">{{ r.ticket.ticket_code if r.ticket else '-' }}</td>
+                        <td><span class="badge bg-warning text-dark">{{ r.coordinator.full_name if r.coordinator else 'Coordinator' }}</span></td>
+                        <td class="small">{{ r.scanned_at.strftime('%b %d, %Y - %I:%M:%S %p') }}</td>
+                        <td class="text-end pe-4"><span class="badge bg-success">{{ r.status }}</span></td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="7" class="text-center py-4 text-muted">No attendance scans recorded yet.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

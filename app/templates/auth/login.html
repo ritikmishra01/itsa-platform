@@ -1,0 +1,77 @@
+﻿{% extends "base.html" %}
+{% block title %}Log In{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5 col-lg-4">
+            <div class="card card-itsa p-4 shadow-sm">
+                <div class="text-center mb-4">
+                    <div class="bg-primary text-white p-3 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 56px; height: 56px;">
+                        <i class="bi bi-box-arrow-in-right fs-3"></i>
+                    </div>
+                    <h3 class="fw-bold">Welcome Back</h3>
+                    <p class="text-muted small">Sign in to your ITSA Platform account</p>
+                </div>
+
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Email Address</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
+                            <input type="email" class="form-control" name="email" required placeholder="name@college.edu">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-lock"></i></span>
+                            <input type="password" class="form-control" name="password" required placeholder="••••••••">
+                        </div>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                        <label class="form-check-label small" for="remember">Keep me logged in</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 mb-3">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> Log In
+                    </button>
+                </form>
+
+                <div class="text-center border-top pt-3 small text-muted">
+                    Don't have an account? <a href="{{ url_for('pages.register_page') }}" class="text-primary fw-semibold text-decoration-none">Register as a Student</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+
+    try {
+        const res = await apiCall('/api/v1/auth/login', 'POST', data);
+        showToast('Login successful! Redirecting...', 'success');
+        setTimeout(() => {
+            if (res.data.role === 'ADMIN') {
+                window.location.href = "{{ url_for('pages.admin_dashboard') }}";
+            } else if (res.data.role === 'COORDINATOR') {
+                window.location.href = "{{ url_for('pages.coordinator_dashboard') }}";
+            } else {
+                window.location.href = "{{ url_for('pages.student_dashboard') }}";
+            }
+        }, 800);
+    } catch (err) {
+        // Handled in apiCall
+    }
+});
+</script>
+{% endblock %}

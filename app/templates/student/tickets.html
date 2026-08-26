@@ -1,0 +1,49 @@
+﻿{% extends "base.html" %}
+{% block title %}My Digital Tickets{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">My Digital QR Tickets</h2>
+            <p class="text-muted small mb-0">Show these QR codes to coordinators at entry gates to mark attendance</p>
+        </div>
+        <a href="{{ url_for('pages.events_page') }}" class="btn btn-outline-primary btn-sm">Explore More Events</a>
+    </div>
+
+    <div class="row g-4">
+        {% if tickets %}
+            {% for ticket in tickets %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card card-itsa p-4 text-center h-100 shadow-sm border-primary border-opacity-50">
+                    <span class="badge bg-primary px-3 py-1 rounded-pill mx-auto mb-3">
+                        {{ ticket.registration.event.category.name if ticket.registration.event.category else 'Event Ticket' }}
+                    </span>
+                    <h5 class="fw-bold mb-1">{{ ticket.registration.event.title }}</h5>
+                    <div class="small text-muted mb-3">
+                        <i class="bi bi-clock me-1"></i> {{ ticket.registration.event.start_datetime.strftime('%b %d, %Y - %I:%M %p') }}<br/>
+                        <i class="bi bi-geo-alt me-1"></i> {{ ticket.registration.event.venue.name if ticket.registration.event.venue else 'Campus Hall' }}
+                    </div>
+
+                    <div class="bg-white p-3 rounded-3 border d-inline-block mx-auto mb-3">
+                        <img src="{{ url_for('pages.serve_upload', filename=ticket.qr_image_path.replace('uploads/', '')) }}" class="img-fluid" style="max-width: 180px;" alt="Ticket QR">
+                    </div>
+
+                    <div class="font-monospace small fw-bold text-dark mb-2">{{ ticket.ticket_code }}</div>
+                    <div class="alert alert-light small border py-2 mb-0 text-muted">
+                        <i class="bi bi-info-circle text-primary me-1"></i> Coordinator will scan this code to mark attendance & award +10 points.
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center py-5">
+                <i class="bi bi-ticket-perforated text-muted" style="font-size: 3.5rem;"></i>
+                <h5 class="fw-bold mt-3">No Active Tickets</h5>
+                <p class="text-muted small mb-3">You haven't registered for any upcoming events yet.</p>
+                <a href="{{ url_for('pages.events_page') }}" class="btn btn-primary">Browse Open Events</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

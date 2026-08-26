@@ -1,0 +1,121 @@
+﻿{% extends "base.html" %}
+{% block title %}Official Hub{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <div class="card card-hero p-5 mb-5 shadow-lg position-relative overflow-hidden">
+        <div class="row align-items-center position-relative" style="z-index: 2;">
+            <div class="col-lg-8">
+                <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold mb-3">
+                    <i class="bi bi-stars"></i> Next-Gen Student Platform
+                </span>
+                <h1 class="display-4 fw-extrabold mb-3">Information Technology Students' Association</h1>
+                <p class="lead mb-4 text-light" style="max-width: 650px;">
+                    Discover hackathons, masterclasses, and college events. Register with one click, get digital QR tickets, verify instant certificates, and climb the ITSA points leaderboard.
+                </p>
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="{{ url_for('pages.events_page') }}" class="btn btn-warning btn-lg fw-bold text-dark px-4 shadow">
+                        <i class="bi bi-calendar-event me-2"></i> Browse Events
+                    </a>
+                    {% if not current_user.is_authenticated %}
+                    <a href="{{ url_for('pages.register_page') }}" class="btn btn-outline-light btn-lg px-4">
+                        <i class="bi bi-person-plus me-2"></i> Join as Student
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('pages.student_dashboard') }}" class="btn btn-outline-light btn-lg px-4">
+                        <i class="bi bi-grid me-2"></i> My Dashboard
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-4 d-none d-lg-block text-center">
+                <div class="bg-white bg-opacity-10 p-4 rounded-4 backdrop-blur border border-white border-opacity-25 shadow">
+                    <i class="bi bi-qr-code text-warning" style="font-size: 5rem;"></i>
+                    <h5 class="fw-bold mt-2">Instant QR Attendance</h5>
+                    <p class="small text-white-50 mb-0">Fast, tamper-proof check-in with verified digital certificates</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card card-itsa p-4 text-center">
+                <div class="display-5 fw-bold text-primary mb-1">{{ stats.students }}</div>
+                <div class="text-muted fw-semibold"><i class="bi bi-people-fill text-primary me-1"></i> Active Students</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-itsa p-4 text-center">
+                <div class="display-5 fw-bold text-warning mb-1">{{ stats.events }}</div>
+                <div class="text-muted fw-semibold"><i class="bi bi-calendar-check-fill text-warning me-1"></i> ITSA Events Hosted</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-itsa p-4 text-center">
+                <div class="display-5 fw-bold text-success mb-1">{{ stats.attendances }}</div>
+                <div class="text-muted fw-semibold"><i class="bi bi-patch-check-fill text-success me-1"></i> Verified Attendances</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Featured Events Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Upcoming Featured Events</h3>
+            <p class="text-muted small mb-0">Explore hands-on technical workshops, competitions, and seminars</p>
+        </div>
+        <a href="{{ url_for('pages.events_page') }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+            View All Events <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+    </div>
+
+    <div class="row g-4 mb-5">
+        {% if events %}
+            {% for event in events %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card card-itsa h-100 overflow-hidden d-flex flex-column">
+                    <div class="bg-light position-relative" style="height: 160px; background: linear-gradient(135deg, #e8f0fe, #d2e3fc);">
+                        {% if event.poster_image %}
+                        <img src="{{ url_for('pages.serve_upload', filename=event.poster_image.replace('uploads/', '')) }}" class="w-100 h-100 object-fit-cover" alt="{{ event.title }}">
+                        {% else %}
+                        <div class="w-100 h-100 d-flex align-items-center justify-content-center text-primary fs-1">
+                            <i class="bi bi-calendar-event"></i>
+                        </div>
+                        {% endif %}
+                        <span class="position-absolute top-0 end-0 m-3 badge bg-primary">
+                            {{ event.category.name if event.category else 'Event' }}
+                        </span>
+                    </div>
+                    <div class="p-4 d-flex flex-column flex-grow-1">
+                        <div class="text-muted small mb-2">
+                            <i class="bi bi-clock me-1"></i> {{ event.start_datetime.strftime('%b %d, %Y - %I:%M %p') }}
+                        </div>
+                        <h5 class="fw-bold mb-2">{{ event.title }}</h5>
+                        <p class="text-muted small text-truncate-3 mb-3 flex-grow-1">
+                            {{ event.description[:120] }}...
+                        </p>
+                        <div class="border-top pt-3 d-flex justify-content-between align-items-center">
+                            <span class="small text-muted">
+                                <i class="bi bi-geo-alt me-1"></i> {{ event.venue.name if event.venue else 'Campus' }}
+                            </span>
+                            <a href="{{ url_for('pages.event_detail', event_id=event.id) }}" class="btn btn-sm btn-primary">
+                                Details & Register
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center py-5">
+                <i class="bi bi-calendar-x text-muted" style="font-size: 3rem;"></i>
+                <h5 class="fw-bold mt-3">No upcoming events scheduled</h5>
+                <p class="text-muted small">Stay tuned! Exciting technical workshops and hackathons are coming soon.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Registrations & Tickets{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item active">Registrations & Tickets</li>
+{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold mb-1">Registration & Ticket Management</h4>
+        <p class="text-muted small mb-0">Monitor student registrations, digital ticket codes, and seat bookings</p>
+    </div>
+    <a href="{{ url_for('api_admin.export_report_csv', report_type='registrations') }}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-download me-1"></i> Export CSV
+    </a>
+</div>
+
+<!-- Metrics Row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card card-itsa p-3 border-start border-4 border-primary">
+            <div class="text-muted small fw-semibold">Total Registrations</div>
+            <h3 class="fw-bold mb-0 text-primary">{{ total_count }}</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-itsa p-3 border-start border-4 border-success">
+            <div class="text-muted small fw-semibold">Confirmed Bookings</div>
+            <h3 class="fw-bold mb-0 text-success">{{ confirmed_count }}</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-itsa p-3 border-start border-4 border-danger">
+            <div class="text-muted small fw-semibold">Cancelled</div>
+            <h3 class="fw-bold mb-0 text-danger">{{ cancelled_count }}</h3>
+        </div>
+    </div>
+</div>
+
+<!-- Registrations Table -->
+<div class="card card-itsa overflow-hidden shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">Student</th>
+                    <th>Event</th>
+                    <th>Reg Number</th>
+                    <th>Ticket Code</th>
+                    <th>Date</th>
+                    <th class="text-end pe-4">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if registrations %}
+                    {% for r in registrations %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark">{{ r.user.full_name }}</div>
+                            <div class="small text-muted">{{ r.user.email }}</div>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">{{ r.event.title }}</div>
+                            <small class="text-muted">{{ r.event.start_datetime.strftime('%b %d, %Y') }}</small>
+                        </td>
+                        <td class="font-monospace small text-primary">{{ r.registration_number }}</td>
+                        <td class="font-monospace small text-muted">{{ r.ticket.ticket_code if r.ticket else '-' }}</td>
+                        <td class="small">{{ r.registered_at.strftime('%b %d, %H:%M') }}</td>
+                        <td class="text-end pe-4">
+                            <span class="badge {% if r.status == 'CONFIRMED' %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ r.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="6" class="text-center py-4 text-muted">No registrations found.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,82 @@
+﻿{% extends "base.html" %}
+{% block title %}Community Moderation Queue{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-shield-check text-primary me-2"></i> Content Moderation Queue</h2>
+            <p class="text-muted small mb-0">Review reported posts/comments with Gemini AI automated advisory</p>
+        </div>
+    </div>
+
+    <div class="card card-itsa overflow-hidden shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Report Reason</th>
+                        <th>Reported Item</th>
+                        <th>Reporter</th>
+                        <th>Status</th>
+                        <th>Timestamp</th>
+                        <th class="text-end pe-4">Admin Decision</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if reports %}
+                        {% for r in reports %}
+                        <tr>
+                            <td class="ps-4">
+                                <span class="badge bg-danger">{{ r.reason }}</span>
+                                {% if r.description %}<div class="small text-muted mt-1">{{ r.description }}</div>{% endif %}
+                            </td>
+                            <td>
+                                {% if r.reported_post %}
+                                <div class="small text-truncate" style="max-width: 250px;">{{ r.reported_post.content }}</div>
+                                {% elif r.reported_comment %}
+                                <div class="small text-truncate" style="max-width: 250px;">{{ r.reported_comment.content }}</div>
+                                {% else %}
+                                <span class="text-muted small">Item removed</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ r.reporter.full_name if r.reporter else 'Anonymous' }}</td>
+                            <td>
+                                <span class="badge {% if r.status == 'PENDING' %}bg-warning text-dark{% elif r.status == 'RESOLVED' %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {{ r.status }}
+                                </span>
+                            </td>
+                            <td class="small text-muted">{{ r.created_at.strftime('%b %d, %H:%M') }}</td>
+                            <td class="text-end pe-4">
+                                {% if r.status == 'PENDING' %}
+                                <button class="btn btn-sm btn-danger me-1" onclick="resolveReport({{ r.id }}, 'REMOVE_POST')">Remove</button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="resolveReport({{ r.id }}, 'DISMISSED')">Dismiss</button>
+                                {% else %}
+                                <span class="small text-muted">Handled</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">No content reports in queue. Clean feed!</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function resolveReport(reportId, action) {
+    try {
+        await apiCall(`/api/v1/admin/reports/${reportId}/resolve`, 'POST', { action: action });
+        showToast('Report status updated.', 'success');
+        setTimeout(() => window.location.reload(), 600);
+    } catch(err) {}
+}
+</script>
+{% endblock %}

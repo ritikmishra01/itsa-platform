@@ -1,0 +1,83 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Centralized Reports Export{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item active">Export Reports</li>
+{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold mb-1">Centralized Data Reports Hub</h4>
+        <p class="text-muted small mb-0">Generate and download standard CSV reports for audit and faculty presentations</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card card-itsa p-4 text-center h-100 shadow-sm">
+            <i class="bi bi-calendar-event text-primary fs-1 mb-2"></i>
+            <h5 class="fw-bold mb-1">Events Directory Report</h5>
+            <p class="small text-muted mb-3">{{ counts.events }} total scheduled events</p>
+            <a href="{{ url_for('api_admin.export_report_csv', report_type='events') }}" class="btn btn-outline-primary btn-sm mt-auto">
+                <i class="bi bi-download me-1"></i> Download Events CSV
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card card-itsa p-4 text-center h-100 shadow-sm">
+            <i class="bi bi-ticket-perforated text-info fs-1 mb-2"></i>
+            <h5 class="fw-bold mb-1">Registrations Report</h5>
+            <p class="small text-muted mb-3">{{ counts.registrations }} student registrations</p>
+            <a href="{{ url_for('api_admin.export_report_csv', report_type='registrations') }}" class="btn btn-outline-info btn-sm mt-auto">
+                <i class="bi bi-download me-1"></i> Download Registrations CSV
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card card-itsa p-4 text-center h-100 shadow-sm">
+            <i class="bi bi-qr-code-scan text-success fs-1 mb-2"></i>
+            <h5 class="fw-bold mb-1">QR Attendance Report</h5>
+            <p class="small text-muted mb-3">{{ counts.attendance }} verified check-in records</p>
+            <a href="{{ url_for('api_admin.export_report_csv', report_type='attendance') }}" class="btn btn-outline-success btn-sm mt-auto">
+                <i class="bi bi-download me-1"></i> Download Attendance CSV
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card card-itsa p-4 text-center h-100 shadow-sm">
+            <i class="bi bi-award text-warning fs-1 mb-2"></i>
+            <h5 class="fw-bold mb-1">Certificates Issued Report</h5>
+            <p class="small text-muted mb-3">{{ counts.certificates }} certified students</p>
+            <a href="{{ url_for('api_admin.export_report_csv', report_type='certificates') }}" class="btn btn-outline-warning text-dark btn-sm fw-semibold mt-auto">
+                <i class="bi bi-download me-1"></i> Download Certificates CSV
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card card-itsa p-4 text-center h-100 shadow-sm">
+            <i class="bi bi-trophy text-danger fs-1 mb-2"></i>
+            <h5 class="fw-bold mb-1">ITSA Points Ledger Report</h5>
+            <p class="small text-muted mb-3">{{ counts.points }} transaction events</p>
+            <a href="{{ url_for('api_admin.export_report_csv', report_type='points') }}" class="btn btn-outline-danger btn-sm mt-auto">
+                <i class="bi bi-download me-1"></i> Download Points CSV
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card card-itsa p-4 text-center h-100 shadow-sm">
+            <i class="bi bi-people text-secondary fs-1 mb-2"></i>
+            <h5 class="fw-bold mb-1">User Accounts Directory</h5>
+            <p class="small text-muted mb-3">{{ counts.users }} total accounts</p>
+            <a href="{{ url_for('api_admin.export_report_csv', report_type='users') }}" class="btn btn-outline-secondary btn-sm mt-auto">
+                <i class="bi bi-download me-1"></i> Download Users CSV
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

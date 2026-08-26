@@ -1,0 +1,43 @@
+﻿{% extends "base.html" %}
+{% block title %}My Certificates{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <h2 class="fw-bold mb-1">My Certificates</h2>
+    <p class="text-muted small mb-4">Verified digital credentials generated upon event attendance check-in</p>
+
+    <div class="row g-4">
+        {% if certificates %}
+            {% for cert in certificates %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card card-itsa p-4 h-100 shadow-sm d-flex flex-column border-success border-opacity-50">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <i class="bi bi-patch-check-fill text-success fs-2"></i>
+                        <span class="badge bg-success">{{ cert.certificate_type }}</span>
+                    </div>
+                    <h5 class="fw-bold mb-2">{{ cert.event.title }}</h5>
+                    <div class="small text-muted mb-3">
+                        Event Date: {{ cert.event.start_datetime.strftime('%B %d, %Y') }}<br/>
+                        Code: <span class="font-monospace">{{ cert.certificate_code }}</span>
+                    </div>
+                    <div class="mt-auto border-top pt-3 d-flex gap-2">
+                        <a href="{{ url_for('api_certificates.download_certificate', cert_id=cert.id) }}" class="btn btn-sm btn-primary w-100">
+                            <i class="bi bi-download me-1"></i> Download PDF
+                        </a>
+                        <a href="{{ url_for('pages.verify_certificate_page', code=cert.certificate_code) }}" class="btn btn-sm btn-outline-secondary" target="_blank" title="Verify Online">
+                            <i class="bi bi-box-arrow-up-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center py-5">
+                <i class="bi bi-award text-muted" style="font-size: 3.5rem;"></i>
+                <h5 class="fw-bold mt-3">No Certificates Earned Yet</h5>
+                <p class="text-muted small">Attend open ITSA events to earn verified digital certificates automatically!</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
