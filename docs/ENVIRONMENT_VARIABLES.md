@@ -1,4 +1,4 @@
-﻿# Environment Variables — ITSA Platform
+# Environment Variables — ITSA Platform
 
 > Copy `.env.example` to `.env`. Fill in real values. Never commit `.env`.
 
@@ -13,16 +13,14 @@
 | `SECRET_KEY` | Yes | — | `xK9#mP2@...` | Min 32 random chars. Rotate if exposed. |
 | `PORT` | No | `5000` | `5000` | Server port |
 
-## Database
+## Database Configuration
 
 | Variable | Required | Default | Example | Notes |
 |---|---|---|---|---|
-| `DATABASE_URL` | Yes | — | `mysql+pymysql://user:pass@host:3306/itsa_platform` | Full SQLAlchemy URL |
-| `MYSQL_HOST` | Yes | — | `localhost` | DB host |
-| `MYSQL_PORT` | No | `3306` | `3306` | DB port |
-| `MYSQL_DATABASE` | Yes | — | `itsa_platform` | DB name |
-| `MYSQL_USER` | Yes | — | `root` | DB user |
-| `MYSQL_PASSWORD` | Yes | — | `your_password` | DB password. Never commit. |
+| `DATABASE_URL` | Yes | `sqlite:///itsa_platform.db` | `postgresql+psycopg2://user:pass@host:5432/dbname` | Full SQLAlchemy URL (PostgreSQL for Render, SQLite for Local) |
+| `ADMIN_EMAIL` | No | `admin@itsa.edu` | `admin@itsa.edu` | Production Admin email for initialization |
+| `ADMIN_PASSWORD` | No | (Auto-generated if empty) | `SecurePass#2026!` | Production Admin password for initialization |
+| `ADMIN_NAME` | No | `ITSA Administrator` | `ITSA Administrator` | Production Admin full name |
 
 ## AI — Gemini
 

@@ -39,6 +39,15 @@ def create_app(config_name=None):
         app.logger.setLevel(logging.INFO)
         app.logger.info('ITSA Platform startup')
 
+    # Ensure Upload Directories Exist (Local or Render Persistent Disk)
+    upload_dir = app.config.get('UPLOAD_FOLDER', 'uploads')
+    try:
+        os.makedirs(upload_dir, exist_ok=True)
+        for sub in ['tickets', 'certificates', 'profiles', 'events/posters', 'posts/images', 'posts/videos', 'gallery']:
+            os.makedirs(os.path.join(upload_dir, sub), exist_ok=True)
+    except Exception as e:
+        app.logger.warning(f"Could not create upload directory {upload_dir}: {e}")
+
     # Active Session Suspension & Account Status Guard
     @app.before_request
     def check_user_session_status():

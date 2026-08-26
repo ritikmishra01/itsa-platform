@@ -12,27 +12,28 @@ class Config:
     APP_NAME = os.environ.get('APP_NAME', 'ITSA AI-Powered Platform')
     FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5000')
 
-    # Database configuration with cloud URL normalization
+    # Database configuration with cloud URL normalization (PostgreSQL / MySQL / SQLite)
     database_url = os.environ.get('DATABASE_URL')
     if database_url:
         if database_url.startswith('mysql://'):
             database_url = database_url.replace('mysql://', 'mysql+pymysql://', 1)
         elif database_url.startswith('postgres://'):
-            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+            database_url = database_url.replace('postgres://', 'postgresql+psycopg2://', 1)
+        elif database_url.startswith('postgresql://') and not database_url.startswith('postgresql+'):
+            database_url = database_url.replace('postgresql://', 'postgresql+psycopg2://', 1)
     else:
-        mysql_user = os.environ.get('MYSQL_USER', 'root')
-        mysql_password = os.environ.get('MYSQL_PASSWORD', 'root')
-        mysql_host = os.environ.get('MYSQL_HOST', 'localhost')
-        mysql_port = os.environ.get('MYSQL_PORT', '3306')
-        mysql_db = os.environ.get('MYSQL_DATABASE', 'itsa_platform')
-        database_url = f"mysql+pymysql://{mysql_user}:{mysql_password}@{mysql_host}:{mysql_port}/{mysql_db}"
+        # Fallback to local SQLite database
+        database_url = f"sqlite:///{os.path.join(basedir, 'itsa_platform.db')}"
 
     SQLALCHEMY_DATABASE_URI = database_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        "pool_pre_ping": True,
-        "pool_recycle": 300,
-    }
+    if database_url.startswith('sqlite:'):
+        SQLALCHEMY_ENGINE_OPTIONS = {}
+    else:
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            "pool_pre_ping": True,
+            "pool_recycle": 300,
+        }
 
     # Session & Cookie Security
     SESSION_COOKIE_HTTPONLY = True

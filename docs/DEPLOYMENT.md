@@ -1,7 +1,10 @@
-﻿# ITSA Platform: Production Deployment & Architecture Manual
+# ITSA Platform: Production Deployment & Architecture Manual
 
 **System**: Information Technology Students' Association (ITSA) AI-Powered Event Management & Student Engagement Platform  
-**Target Cloud Platform**: Render (Web Service + Managed Cloud Database + Persistent Disk Storage)  
+**Target Cloud Platform**: Render (Web Service + Managed PostgreSQL + Persistent Disk Storage)  
+**Database**:
+- **Local Development**: SQLite (`itsa_platform.db`)
+- **Production Cloud**: PostgreSQL (`DATABASE_URL` via Render Managed Database)
 **WSGI Application Server**: Gunicorn  
 **AI Integration**: Google Gemini 2.0 Flash API  
 
@@ -42,8 +45,8 @@
             │                        │                │                        │
             ▼                        ▼                ▼                        ▼
  ┌──────────────────────┐ ┌───────────────────┐ ┌─────────────┐ ┌──────────────────────┐
- │ Managed Cloud DB     │ │ Persistent Disk   │ │ Google      │ │ SMTP Email Gateway   │
- │ (MySQL / PostgreSQL) │ │ (/var/data/uploads│ │ Gemini 2.0  │ │ (Gmail / SendGrid)   │
+ │ Render PostgreSQL    │ │ Persistent Disk   │ │ Google      │ │ SMTP Email Gateway   │
+ │ Database             │ │ (/var/data/uploads│ │ Gemini 2.0  │ │ (Gmail / SendGrid)   │
  │ - 30 relational tbls │ │ - Posters/Tickets │ │ Flash API   │ │ - Registration alert │
  │ - ACID Transactions  │ │ - Certs/Gallery)  │ │ - AI Chat   │ │ - Attendance notice  │
  └──────────────────────┘ └───────────────────┘ └─────────────┘ └──────────────────────┘
