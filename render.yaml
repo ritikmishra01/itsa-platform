@@ -1,4 +1,9 @@
-﻿services:
+databases:
+  - name: itsa-db
+    plan: free
+    region: oregon
+
+services:
   - type: web
     name: itsa-platform
     env: python
@@ -25,7 +30,9 @@
       - key: UPLOAD_FOLDER
         value: /var/data/uploads
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: itsa-db
+          property: connectionString
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL

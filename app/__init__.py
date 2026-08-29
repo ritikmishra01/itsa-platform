@@ -14,6 +14,23 @@ def create_app(config_name=None):
     app = Flask(__name__)
     app.config.from_object(config_by_name.get(config_name, config_by_name['default']))
 
+    # Dynamic database URL normalization & validation for active runtime environment
+    if not app.config.get('TESTING'):
+        from app.config import normalize_database_url
+        try:
+            db_uri = normalize_database_url(os.environ.get('DATABASE_URL'))
+            app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
+            if db_uri.startswith('sqlite:'):
+                app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {}
+            else:
+                app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+                    "pool_pre_ping": True,
+                    "pool_recycle": 300,
+                }
+        except Exception as e:
+            app.logger.critical(f"Database configuration error: {e}")
+            raise
+
     # Initialize extensions
     db.init_app(app)
     login_manager.init_app(app)
