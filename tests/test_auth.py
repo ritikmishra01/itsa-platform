@@ -58,3 +58,74 @@ def test_database_url_normalization():
         normalize_database_url("<Render PostgreSQL Internal Database URL>")
     assert "placeholder" in str(excinfo.value).lower()
 
+
+def test_admin_creation_and_password_synchronization():
+    import os
+    from app import create_app, db
+    from app.models.user import User
+    from scripts.init_prod_admin import init_production_system
+
+    test_app = create_app('testing')
+    with test_app.app_context():
+        db.create_all()
+
+        # 1. Initial creation with Password A
+        os.environ['ADMIN_EMAIL'] = 'admin@itsa.edu'
+        os.environ['ADMIN_PASSWORD'] = 'InitialAdminPass#2026'
+        init_production_system(test_app)
+
+        admin_count = User.query.filter_by(role='ADMIN').count()
+        assert admin_count == 1
+        admin = User.query.filter_by(email='admin@itsa.edu').first()
+        assert admin is not None
+        assert admin.role == 'ADMIN'
+        assert admin.check_password('InitialAdminPass#2026') is True
+        assert admin.check_password('WrongPass#2026') is False
+
+    test_client = test_app.test_client()
+
+    # Test login with Initial Password
+    res = test_client.post('/api/v1/auth/login', json={
+        'email': 'admin@itsa.edu',
+        'password': 'InitialAdminPass#2026'
+    })
+    assert res.status_code == 200
+    assert res.get_json()['data']['role'] == 'ADMIN'
+
+    # Test login with Incorrect Password fails
+    res_fail = test_client.post('/api/v1/auth/login', json={
+        'email': 'admin@itsa.edu',
+        'password': 'WrongPass#2026'
+    })
+    assert res_fail.status_code == 401
+
+    with test_app.app_context():
+        # 2. Update/Sync Password to Password B without creating duplicates
+        os.environ['ADMIN_PASSWORD'] = 'UpdatedAdminPass#2026'
+        init_production_system(test_app)
+
+        # Verify no duplicate admin created
+        admin_count_after = User.query.filter_by(role='ADMIN').count()
+        assert admin_count_after == 1
+
+        admin_updated = User.query.filter_by(email='admin@itsa.edu').first()
+        assert admin_updated.check_password('UpdatedAdminPass#2026') is True
+        assert admin_updated.check_password('InitialAdminPass#2026') is False
+
+    # Test login with Updated Password succeeds
+    res_new = test_client.post('/api/v1/auth/login', json={
+        'email': 'admin@itsa.edu',
+        'password': 'UpdatedAdminPass#2026'
+    })
+    assert res_new.status_code == 200
+    assert res_new.get_json()['data']['role'] == 'ADMIN'
+
+    # Test old password now fails
+    res_old = test_client.post('/api/v1/auth/login', json={
+        'email': 'admin@itsa.edu',
+        'password': 'InitialAdminPass#2026'
+    })
+    assert res_old.status_code == 401
+
+
+

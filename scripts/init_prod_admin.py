@@ -9,19 +9,21 @@ from app import create_app, db
 from app.models.user import User
 from app.models.event import EventCategory, Venue
 
-def init_production_system():
+def init_production_system(app=None):
     env = os.environ.get('FLASK_ENV', 'production')
-    try:
-        app = create_app(env)
-    except Exception as e:
-        print(f"[!] Configuration Error during application startup: {e}")
-        print("[!] Please verify your DATABASE_URL environment variable in Render.")
-        sys.exit(1)
+    if app is None:
+        try:
+            app = create_app(env)
+        except Exception as e:
+            print(f"[!] Configuration Error during application startup: {e}")
+            print("[!] Please verify your DATABASE_URL environment variable in Render.")
+            sys.exit(1)
 
     try:
         with app.app_context():
             print(f"[*] Initializing ITSA Platform in [{env}] mode...")
             db.create_all()
+            db.session.expire_all()
 
             # 1. Initialize Essential Event Categories if empty
             categories = [
@@ -53,18 +55,22 @@ def init_production_system():
                 db.session.commit()
                 print("[+] Default venue registered.")
 
-            # 3. Create or Verify Production Administrator
+            # 3. Create or Synchronize Production Administrator
             admin_email = os.environ.get('ADMIN_EMAIL', 'admin@itsa.edu').strip().lower()
             admin_password = os.environ.get('ADMIN_PASSWORD')
-            admin_name = os.environ.get('ADMIN_NAME', 'ITSA System Administrator').strip()
+            admin_name = os.environ.get('ADMIN_NAME', 'ITSA Administrator').strip()
 
-            admin = User.query.filter_by(role='ADMIN').first()
+            # Look for existing admin by email first, then by role
+            admin = User.query.filter_by(email=admin_email).first()
             if not admin:
-                if not admin_password:
-                    admin_password = secrets.token_urlsafe(16)
-                    generated_pass = True
+                admin = User.query.filter_by(role='ADMIN').first()
+
+            if not admin:
+                # No admin exists: Create the initial administrator account
+                if admin_password and admin_password.strip():
+                    pass_to_set = admin_password.strip()
                 else:
-                    generated_pass = False
+                    pass_to_set = secrets.token_urlsafe(16)
 
                 admin = User(
                     email=admin_email,
@@ -73,16 +79,38 @@ def init_production_system():
                     is_active=True,
                     is_suspended=False
                 )
-                admin.set_password(admin_password)
+                admin.set_password(pass_to_set)
                 db.session.add(admin)
                 db.session.commit()
-                print("[+] Production Administrator account created successfully.")
-                print(f"    Email: {admin_email}")
-                if generated_pass:
-                    print(f"    Temporary Generated Password: {admin_password}")
-                    print("    IMPORTANT: Change this password immediately after first login!")
+                print(f"[+] Production Administrator account created successfully for {admin_email}.")
             else:
-                print(f"[*] Production Administrator already exists ({admin.email}).")
+                # Admin account exists: Ensure account is active and synchronize credentials if configured
+                updated = False
+                if admin.role != 'ADMIN':
+                    admin.role = 'ADMIN'
+                    updated = True
+                if not admin.is_active:
+                    admin.is_active = True
+                    updated = True
+                if admin.is_suspended:
+                    admin.is_suspended = False
+                    updated = True
+
+                # Synchronize password with ADMIN_PASSWORD environment variable
+                if admin_password and admin_password.strip():
+                    clean_pw = admin_password.strip()
+                    if not admin.check_password(clean_pw):
+                        admin.set_password(clean_pw)
+                        updated = True
+                        print(f"[+] Production Administrator password synchronized with ADMIN_PASSWORD for {admin.email}.")
+                    else:
+                        print(f"[*] Production Administrator password is already up-to-date for {admin.email}.")
+                else:
+                    print(f"[*] Production Administrator exists ({admin.email}); preserving existing credentials.")
+
+                if updated:
+                    db.session.commit()
+                    print(f"[+] Production Administrator account state confirmed for {admin.email}.")
 
             print("[OK] Production initialization completed successfully.")
     except Exception as e:

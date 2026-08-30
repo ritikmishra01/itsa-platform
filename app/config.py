@@ -131,11 +131,17 @@ class DevelopmentConfig(Config):
     SESSION_COOKIE_SECURE = False
 
 
+from sqlalchemy.pool import StaticPool
+
 class TestingConfig(Config):
     """Testing configuration."""
     TESTING = True
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "poolclass": StaticPool,
+        "connect_args": {"check_same_thread": False}
+    }
     WTF_CSRF_ENABLED = False
     SESSION_COOKIE_SECURE = False
 
