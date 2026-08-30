@@ -100,7 +100,11 @@ def test_admin_creation_and_password_synchronization():
     assert res_fail.status_code == 401
 
     with test_app.app_context():
-        # 2. Update/Sync Password to Password B without creating duplicates
+        # 2. Re-running initialization with SAME password is idempotent and creates no duplicate
+        init_production_system(test_app)
+        assert User.query.filter_by(role='ADMIN').count() == 1
+
+        # 3. Update/Sync Password to Password B without creating duplicates
         os.environ['ADMIN_PASSWORD'] = 'UpdatedAdminPass#2026'
         init_production_system(test_app)
 

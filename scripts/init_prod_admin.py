@@ -60,6 +60,8 @@ def init_production_system(app=None):
             admin_password = os.environ.get('ADMIN_PASSWORD')
             admin_name = os.environ.get('ADMIN_NAME', 'ITSA Administrator').strip()
 
+            clean_pw = admin_password.strip().strip('"\'') if admin_password and admin_password.strip() else None
+
             # Look for existing admin by email first, then by role
             admin = User.query.filter_by(email=admin_email).first()
             if not admin:
@@ -67,10 +69,7 @@ def init_production_system(app=None):
 
             if not admin:
                 # No admin exists: Create the initial administrator account
-                if admin_password and admin_password.strip():
-                    pass_to_set = admin_password.strip()
-                else:
-                    pass_to_set = secrets.token_urlsafe(16)
+                pass_to_set = clean_pw if clean_pw else secrets.token_urlsafe(16)
 
                 admin = User(
                     email=admin_email,
@@ -86,6 +85,9 @@ def init_production_system(app=None):
             else:
                 # Admin account exists: Ensure account is active and synchronize credentials if configured
                 updated = False
+                if admin.email != admin_email:
+                    admin.email = admin_email
+                    updated = True
                 if admin.role != 'ADMIN':
                     admin.role = 'ADMIN'
                     updated = True
@@ -97,8 +99,7 @@ def init_production_system(app=None):
                     updated = True
 
                 # Synchronize password with ADMIN_PASSWORD environment variable
-                if admin_password and admin_password.strip():
-                    clean_pw = admin_password.strip()
+                if clean_pw:
                     if not admin.check_password(clean_pw):
                         admin.set_password(clean_pw)
                         updated = True
