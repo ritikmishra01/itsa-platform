@@ -1,4 +1,4 @@
-﻿import io
+import io
 import pytest
 from app.models.user import User, StudentProfile
 from app.models.post import Post
@@ -89,9 +89,29 @@ def test_3_admin_logout_and_cache_protection(app):
     assert '/login' in res_logout.location
 
     # 4. Protected admin pages must require login again
-    res_after = admin_client.get('/admin/dashboard')
-    assert res_after.status_code == 302
-    assert '/login' in res_after.location
+    admin_protected_urls = [
+        '/admin/dashboard',
+        '/admin/users',
+        '/admin/coordinators',
+        '/admin/events',
+        '/admin/registrations',
+        '/admin/attendance',
+        '/admin/certificates',
+        '/admin/community',
+        '/admin/reports',
+        '/admin/notifications',
+        '/admin/analytics',
+        '/admin/settings',
+        '/admin/gallery',
+        '/admin/gamification',
+        '/admin/ai-center',
+        '/admin/audit-logs',
+        '/admin/search'
+    ]
+    for url in admin_protected_urls:
+        res_after = admin_client.get(url)
+        assert res_after.status_code == 302
+        assert '/login' in res_after.location
 
 
 def test_4_admin_notifications_page_no_jinja_error(auth_client_admin, app):

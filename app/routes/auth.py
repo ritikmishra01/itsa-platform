@@ -55,7 +55,7 @@ def login():
 def logout():
     logout_user()
     session.clear()
-    if request.is_json or request.accept_mimetypes.best == 'application/json':
+    if request.method == 'POST' and (request.is_json or request.accept_mimetypes.best == 'application/json'):
         return success_response({}, "Logged out successfully.")
     flash("You have been logged out successfully.", "info")
     return redirect(url_for('pages.login_page'))
