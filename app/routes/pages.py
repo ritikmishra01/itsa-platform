@@ -49,22 +49,43 @@ def logout():
     from flask import session, current_app
     logout_user()
     session.clear()
+    session.permanent = False
+    session['_remember'] = 'clear'
+
     flash("You have been logged out successfully.", "info")
     response = redirect(url_for('pages.login_page'))
 
-    # Explicitly clear both session and remember cookies
     cookie_name = current_app.config.get('REMEMBER_COOKIE_NAME', 'remember_token')
     session_cookie = current_app.config.get('SESSION_COOKIE_NAME', 'session')
     rem_path = current_app.config.get('REMEMBER_COOKIE_PATH', '/')
     sess_path = current_app.config.get('SESSION_COOKIE_PATH', '/')
     rem_domain = current_app.config.get('REMEMBER_COOKIE_DOMAIN')
     sess_domain = current_app.config.get('SESSION_COOKIE_DOMAIN')
+    rem_secure = current_app.config.get('REMEMBER_COOKIE_SECURE', False)
+    sess_secure = current_app.config.get('SESSION_COOKIE_SECURE', False)
+    rem_samesite = current_app.config.get('REMEMBER_COOKIE_SAMESITE', 'Lax')
+    sess_samesite = current_app.config.get('SESSION_COOKIE_SAMESITE', 'Lax')
 
-    response.delete_cookie(cookie_name, path=rem_path, domain=rem_domain)
-    response.delete_cookie(session_cookie, path=sess_path, domain=sess_domain)
-    # Also delete root path fallback
+    # Direct delete matching exact configuration
+    response.delete_cookie(cookie_name, path=rem_path, domain=rem_domain, secure=rem_secure, httponly=True, samesite=rem_samesite)
+    response.delete_cookie(session_cookie, path=sess_path, domain=sess_domain, secure=sess_secure, httponly=True, samesite=sess_samesite)
+
+    # Standard browser root path fallbacks with HttpOnly and Lax
+    response.delete_cookie(cookie_name, path='/', secure=False, httponly=True, samesite='Lax')
+    response.delete_cookie(session_cookie, path='/', secure=False, httponly=True, samesite='Lax')
+    response.delete_cookie('remember_token', path='/', secure=False, httponly=True, samesite='Lax')
+    response.delete_cookie('session', path='/', secure=False, httponly=True, samesite='Lax')
+
+    # Basic root path fallbacks without SameSite/HttpOnly
+    response.delete_cookie(cookie_name, path='/')
+    response.delete_cookie(session_cookie, path='/')
     response.delete_cookie('remember_token', path='/')
     response.delete_cookie('session', path='/')
+
+    # Strict anti-cache headers on logout redirect
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0, private'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
     return response
 
 # -------------------------------------------------------------
@@ -254,6 +275,7 @@ def leaderboard_page():
 
 
 @pages_bp.route('/chatbot')
+@pages_bp.route('/student/chatbot')
 @student_required
 def chatbot_page():
     return render_template('student/chatbot.html')

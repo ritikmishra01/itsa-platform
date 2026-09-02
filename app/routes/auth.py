@@ -23,7 +23,7 @@ def register():
             phone=data.get('phone'),
             bio=data.get('bio')
         )
-        login_user(user, remember=True)
+        login_user(user, remember=False)
         return success_response(user.to_dict(), "Registration successful.", 201)
     except ValueError as e:
         return error_response("AUTH_VALIDATION_ERROR", str(e), 400)
@@ -56,6 +56,8 @@ def logout():
     from flask import current_app
     logout_user()
     session.clear()
+    session.permanent = False
+    session['_remember'] = 'clear'
 
     cookie_name = current_app.config.get('REMEMBER_COOKIE_NAME', 'remember_token')
     session_cookie = current_app.config.get('SESSION_COOKIE_NAME', 'session')
@@ -63,21 +65,36 @@ def logout():
     sess_path = current_app.config.get('SESSION_COOKIE_PATH', '/')
     rem_domain = current_app.config.get('REMEMBER_COOKIE_DOMAIN')
     sess_domain = current_app.config.get('SESSION_COOKIE_DOMAIN')
+    rem_secure = current_app.config.get('REMEMBER_COOKIE_SECURE', False)
+    sess_secure = current_app.config.get('SESSION_COOKIE_SECURE', False)
+    rem_samesite = current_app.config.get('REMEMBER_COOKIE_SAMESITE', 'Lax')
+    sess_samesite = current_app.config.get('SESSION_COOKIE_SAMESITE', 'Lax')
+
+    def apply_cookie_deletions(resp):
+        # Delete matching exact configuration
+        resp.delete_cookie(cookie_name, path=rem_path, domain=rem_domain, secure=rem_secure, httponly=True, samesite=rem_samesite)
+        resp.delete_cookie(session_cookie, path=sess_path, domain=sess_domain, secure=sess_secure, httponly=True, samesite=sess_samesite)
+        # Delete with standard browser defaults
+        resp.delete_cookie(cookie_name, path='/', secure=False, httponly=True, samesite='Lax')
+        resp.delete_cookie(session_cookie, path='/', secure=False, httponly=True, samesite='Lax')
+        resp.delete_cookie('remember_token', path='/', secure=False, httponly=True, samesite='Lax')
+        resp.delete_cookie('session', path='/', secure=False, httponly=True, samesite='Lax')
+        resp.delete_cookie(cookie_name, path='/')
+        resp.delete_cookie(session_cookie, path='/')
+        resp.delete_cookie('remember_token', path='/')
+        resp.delete_cookie('session', path='/')
+        resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0, private'
+        resp.headers['Pragma'] = 'no-cache'
+        resp.headers['Expires'] = '0'
 
     if request.method == 'POST' and (request.is_json or request.accept_mimetypes.best == 'application/json'):
         resp = success_response({}, "Logged out successfully.")
-        resp.delete_cookie(cookie_name, path=rem_path, domain=rem_domain)
-        resp.delete_cookie(session_cookie, path=sess_path, domain=sess_domain)
-        resp.delete_cookie('remember_token', path='/')
-        resp.delete_cookie('session', path='/')
+        apply_cookie_deletions(resp)
         return resp
 
     flash("You have been logged out successfully.", "info")
     response = redirect(url_for('pages.login_page'))
-    response.delete_cookie(cookie_name, path=rem_path, domain=rem_domain)
-    response.delete_cookie(session_cookie, path=sess_path, domain=sess_domain)
-    response.delete_cookie('remember_token', path='/')
-    response.delete_cookie('session', path='/')
+    apply_cookie_deletions(response)
     return response
 
 

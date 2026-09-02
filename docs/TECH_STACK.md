@@ -1,89 +1,85 @@
-﻿# Technology Stack -- ITSA Platform
+﻿# Verified Technology Stack — ITSA Platform
 
-## Backend
+## 1. Frontend Technologies
 
-| Technology | Version | Purpose |
-|---|---|---|
-| Python | 3.11+ | Primary programming language |
-| Flask | 3.x | Web framework - routes, templating, WSGI |
-| Flask-SQLAlchemy | 3.x | ORM integration with Flask |
-| SQLAlchemy | 2.x | ORM for MySQL database interaction |
-| Flask-Login | 0.6.x | Session-based user authentication |
-| Flask-Migrate | 4.x | Database migrations via Alembic |
-| Flask-CORS | 4.x | CORS headers for API responses |
-| Flask-Limiter | 3.x | Rate limiting for API and AI endpoints |
-| Werkzeug | 3.x | Password hashing, secure_filename |
-| PyMySQL | 1.x | Python MySQL driver |
-| python-dotenv | 1.x | Load .env into environment variables |
-| Gunicorn | 22.x | Production WSGI server |
+| Technology | Specification | Purpose in Platform |
+| :--- | :--- | :--- |
+| **HTML5** | Semantic Standard | Base document layout, accessible forms, data bindings |
+| **CSS3** | Custom (`static/css/main.css`) | Custom design tokens, responsive cards, typography, animations |
+| **JavaScript** | ES6+ (`static/js/main.js`) | Asynchronous fetch requests (`apiCall`), modal controls, dynamic DOM |
+| **Bootstrap** | Version 5.3.3 (CDN) | Responsive grid, components, buttons, dropdowns, navigation bars |
+| **Bootstrap Icons** | Version 1.11.3 (CDN) | Vector UI icons for event categories, roles, points, and status |
+| **Chart.js** | Version 4.4.1 (CDN) | Real-time analytics charts on Admin and Coordinator dashboards |
+| **html5-qrcode** | Version 2.3.8 (CDN) | Browser camera-based QR scanner for live event attendance verification |
+| **Google Fonts** | Inter & JetBrains Mono | Clean user interface typography and monospace ticket/certificate IDs |
 
-## Database
+---
 
-| Technology | Version | Purpose |
-|---|---|---|
-| MySQL | 8.x | Primary relational database |
-| InnoDB | -- | Storage engine for transactions and foreign keys |
+## 2. Backend Technologies
 
-## Frontend
+| Technology | Specification | Purpose in Platform |
+| :--- | :--- | :--- |
+| **Python** | 3.11+ | Core programming language |
+| **Flask** | >=3.0.0 | Core WSGI application framework, routing, templating, request dispatching |
+| **Flask-SQLAlchemy**| >=3.1.0 | ORM integration with Flask |
+| **SQLAlchemy** | >=2.0.0 | High-performance ORM, relational mapping, and pooling |
+| **Flask-Login** | >=0.6.3 | Session management, remember-me cookies, user authentication state |
+| **Flask-Migrate** | >=4.0.7 | Schema version control via Alembic |
+| **Flask-CORS** | >=4.0.0 | Cross-Origin Resource Sharing handling for REST API endpoints |
+| **Flask-Limiter** | >=3.5.0 | Rate limiting for authentication and AI generation endpoints |
+| **Werkzeug** | >=3.0.0 | Cryptographic password hashing (`pbkdf2:sha256`) and secure file names |
+| **python-dotenv** | >=1.0.0 | Loads `.env` file into runtime process environment |
+| **Gunicorn** | >=21.2.0 | Production WSGI HTTP server with multi-worker concurrency |
 
-| Technology | Version | Purpose |
-|---|---|---|
-| HTML5 | -- | Page structure |
-| CSS3 | -- | Styling |
-| JavaScript | ES6+ | Client-side interactivity |
-| Bootstrap | 5.3 | Responsive UI component library |
-| Chart.js | 4.x | Analytics charts and graphs |
-| html5-qrcode | 2.x | Browser-based QR code scanning |
+---
 
-## AI and Machine Learning
+## 3. Database Technologies
 
-| Technology | Version | Purpose |
-|---|---|---|
-| google-generativeai | latest | Google Gemini API Python SDK |
-| Scikit-learn | 1.x | ML models for recommendations and prediction |
-| Pandas | 2.x | Data manipulation for analytics and ML features |
-| NumPy | 1.x | Numerical operations for ML |
+| Technology | Environment | Purpose in Platform |
+| :--- | :--- | :--- |
+| **SQLite 3** | Local Development | Zero-configuration, file-based relational database (`DATABASE_URL=sqlite:///itsa_platform.db`) |
+| **PostgreSQL** | Render Production | Production managed relational database (`DATABASE_URL=postgresql+psycopg2://...`) |
+| **psycopg2-binary**| Production Driver | High-performance PostgreSQL database adapter for Python |
+| **PyMySQL** | MySQL Support (Optional) | Optional MySQL driver for enterprise campus deployments |
 
-## Utilities
+---
 
-| Technology | Purpose |
-|---|---|
-| qrcode with Pillow | Generate QR code PNG images for tickets |
-| Pillow | Image processing and manipulation |
-| ReportLab | PDF certificate generation |
-| smtplib stdlib | Email sending via SMTP |
-| uuid stdlib | UUID generation for ticket and certificate codes |
-| joblib | Serialize and deserialize trained ML models |
-| OpenCV cv2 | Optional server-side QR code decoding for uploaded images |
+## 4. Artificial Intelligence & Machine Learning
 
-## Infrastructure
+| Technology | Package | Purpose in Platform |
+| :--- | :--- | :--- |
+| **Google Gemini API** | `google-generativeai` >=0.7.0 | Gemini 2.0 Flash for ITSA Chatbot, event description generation, announcement drafting, and sentiment analysis |
+| **Scikit-learn** | `scikit-learn` >=1.4.0 | TF-IDF Vectorization and Cosine Similarity for personalized event recommendations |
+| **NumPy & Pandas** | `numpy` >=1.26.0, `pandas` >=2.2.0 | Matrix operations, analytics aggregation, and feature processing |
+| **Joblib** | `joblib` >=1.3.0 | ML model serialization and persistence |
 
-| Technology | Purpose |
-|---|---|
-| Git | Version control |
-| GitHub | Remote repository hosting |
-| Render | Cloud deployment platform |
-| PlanetScale or Railway | Free tier MySQL database hosting |
+---
 
-## requirements.txt Content
+## 5. Media, Documents & Utilities
 
-Flask==3.0.3
-Flask-SQLAlchemy==3.1.1
-Flask-Login==0.6.3
-Flask-Migrate==4.0.7
-Flask-CORS==4.0.1
-Flask-Limiter==3.7.0
-SQLAlchemy==2.0.31
-PyMySQL==1.1.1
-Werkzeug==3.0.3
-python-dotenv==1.0.1
-google-generativeai==0.7.2
-scikit-learn==1.5.1
-pandas==2.2.2
-numpy==1.26.4
-qrcode[pil]==7.4.2
-Pillow==10.4.0
-reportlab==4.2.2
-joblib==1.4.2
-opencv-python-headless==4.10.0.84
-gunicorn==22.0.0
+| Technology | Package | Purpose in Platform |
+| :--- | :--- | :--- |
+| **QRCode Engine** | `qrcode[pil]` >=7.4.2 | Dynamic QR code generation for event registration tickets |
+| **Pillow (PIL)** | `Pillow` >=10.0.0 | Image processing, thumbnail generation, and poster validation |
+| **ReportLab** | `reportlab` >=4.0.0 | PDF document generation for official event certificates |
+| **SMTP / smtplib** | Python Standard Library | Transactional email dispatch for registrations and announcements |
+
+---
+
+## 6. Testing & Quality Assurance
+
+| Technology | Package | Purpose |
+| :--- | :--- | :--- |
+| **pytest** | >=8.0.0 | Modern Python test framework |
+| **pytest-flask** | >=1.3.0 | Flask application fixture integration |
+| **pytest-cov** | >=4.1.0 | Test coverage measurement and reporting |
+
+---
+
+## 7. Cloud Infrastructure & DevOps
+
+| Platform / Tool | Role |
+| :--- | :--- |
+| **Git & GitHub** | Distributed version control and remote code repository (`ritikmishra01/itsa-platform`) |
+| **Render Web Services** | Cloud hosting platform running Gunicorn on Linux container |
+| **Render PostgreSQL** | Fully managed cloud database with SSL and automated backups |
