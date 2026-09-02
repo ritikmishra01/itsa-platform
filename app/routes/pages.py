@@ -46,11 +46,26 @@ def serve_upload(filename):
 @pages_bp.route('/logout')
 def logout():
     from flask_login import logout_user
-    from flask import session
+    from flask import session, current_app
     logout_user()
     session.clear()
     flash("You have been logged out successfully.", "info")
-    return redirect(url_for('pages.login_page'))
+    response = redirect(url_for('pages.login_page'))
+
+    # Explicitly clear both session and remember cookies
+    cookie_name = current_app.config.get('REMEMBER_COOKIE_NAME', 'remember_token')
+    session_cookie = current_app.config.get('SESSION_COOKIE_NAME', 'session')
+    rem_path = current_app.config.get('REMEMBER_COOKIE_PATH', '/')
+    sess_path = current_app.config.get('SESSION_COOKIE_PATH', '/')
+    rem_domain = current_app.config.get('REMEMBER_COOKIE_DOMAIN')
+    sess_domain = current_app.config.get('SESSION_COOKIE_DOMAIN')
+
+    response.delete_cookie(cookie_name, path=rem_path, domain=rem_domain)
+    response.delete_cookie(session_cookie, path=sess_path, domain=sess_domain)
+    # Also delete root path fallback
+    response.delete_cookie('remember_token', path='/')
+    response.delete_cookie('session', path='/')
+    return response
 
 # -------------------------------------------------------------
 # Health Check Endpoint (Phase 1 Requirement)
@@ -69,17 +84,13 @@ def health_check():
 # -------------------------------------------------------------
 @pages_bp.route('/')
 def home():
-    featured_events = Event.query.filter(
-        Event.status.in_(['PUBLISHED', 'REGISTRATION_OPEN', 'ONGOING'])
-    ).order_by(Event.start_datetime.asc()).limit(6).all()
-
-    categories = EventCategory.query.all()
-    stats = {
-        'students': User.query.filter_by(role='STUDENT').count(),
-        'events': Event.query.count(),
-        'attendances': Attendance.query.filter_by(status='PRESENT').count()
-    }
-    return render_template('public/home.html', events=featured_events, categories=categories, stats=stats)
+    if not current_user.is_authenticated:
+        return redirect(url_for('pages.login_page'))
+    if current_user.role == 'ADMIN':
+        return redirect(url_for('pages.admin_dashboard'))
+    elif current_user.role == 'COORDINATOR':
+        return redirect(url_for('pages.coordinator_dashboard'))
+    return redirect(url_for('pages.student_dashboard'))
 
 
 @pages_bp.route('/events')

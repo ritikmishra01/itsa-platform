@@ -53,12 +53,32 @@ def login():
 
 @auth_bp.route('/logout', methods=['POST', 'GET'])
 def logout():
+    from flask import current_app
     logout_user()
     session.clear()
+
+    cookie_name = current_app.config.get('REMEMBER_COOKIE_NAME', 'remember_token')
+    session_cookie = current_app.config.get('SESSION_COOKIE_NAME', 'session')
+    rem_path = current_app.config.get('REMEMBER_COOKIE_PATH', '/')
+    sess_path = current_app.config.get('SESSION_COOKIE_PATH', '/')
+    rem_domain = current_app.config.get('REMEMBER_COOKIE_DOMAIN')
+    sess_domain = current_app.config.get('SESSION_COOKIE_DOMAIN')
+
     if request.method == 'POST' and (request.is_json or request.accept_mimetypes.best == 'application/json'):
-        return success_response({}, "Logged out successfully.")
+        resp = success_response({}, "Logged out successfully.")
+        resp.delete_cookie(cookie_name, path=rem_path, domain=rem_domain)
+        resp.delete_cookie(session_cookie, path=sess_path, domain=sess_domain)
+        resp.delete_cookie('remember_token', path='/')
+        resp.delete_cookie('session', path='/')
+        return resp
+
     flash("You have been logged out successfully.", "info")
-    return redirect(url_for('pages.login_page'))
+    response = redirect(url_for('pages.login_page'))
+    response.delete_cookie(cookie_name, path=rem_path, domain=rem_domain)
+    response.delete_cookie(session_cookie, path=sess_path, domain=sess_domain)
+    response.delete_cookie('remember_token', path='/')
+    response.delete_cookie('session', path='/')
+    return response
 
 
 @auth_bp.route('/me', methods=['GET'])

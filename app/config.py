@@ -90,6 +90,10 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = os.environ.get('SESSION_COOKIE_SAMESITE', 'Lax')
     SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False').lower() in ('true', '1')
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SAMESITE = os.environ.get('REMEMBER_COOKIE_SAMESITE', 'Lax')
+    REMEMBER_COOKIE_SECURE = os.environ.get('REMEMBER_COOKIE_SECURE', 'False').lower() in ('true', '1')
+    REMEMBER_COOKIE_DURATION = timedelta(days=7)
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
 
     # File uploads: support explicit absolute path (e.g. Render persistent disk) or relative to basedir
@@ -129,6 +133,7 @@ class DevelopmentConfig(Config):
     DEBUG = True
     FLASK_ENV = 'development'
     SESSION_COOKIE_SECURE = False
+    REMEMBER_COOKIE_SECURE = False
 
 
 from sqlalchemy.pool import StaticPool
@@ -144,6 +149,7 @@ class TestingConfig(Config):
     }
     WTF_CSRF_ENABLED = False
     SESSION_COOKIE_SECURE = False
+    REMEMBER_COOKIE_SECURE = False
 
 
 class ProductionConfig(Config):
@@ -151,6 +157,7 @@ class ProductionConfig(Config):
     DEBUG = False
     FLASK_ENV = 'production'
     SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'True').lower() in ('true', '1')
+    REMEMBER_COOKIE_SECURE = os.environ.get('REMEMBER_COOKIE_SECURE', 'True').lower() in ('true', '1')
 
 
 config_by_name = {

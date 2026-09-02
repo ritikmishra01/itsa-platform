@@ -1,4 +1,4 @@
-﻿# ITSA Platform: Comprehensive Bug Fix & Quality Audit Report
+# ITSA Platform: Comprehensive Bug Fix & Quality Audit Report
 
 **Audit Date**: August 26, 2026  
 **Auditor & Architect**: Lead Software Architect & Senior Full-Stack Developer (Antigravity)  
@@ -146,15 +146,65 @@
 
 ---
 
-## 9. Automated Test Summary
+## 10. Issue: Production Auto-Login / Remember-Me Cookie Persistence & Root Route Redirect
+
+- **Issue**: When opening the production website (`https://itsa-platform.onrender.com`), it directly loaded an authenticated user account ("Ritik Mishra") instead of displaying the Login page, and clicking Sign Out / Logout did not reliably return to `/login`.
+- **Root Cause**:
+  1. When logging in with "Keep me logged in" (`remember=True`), Flask-Login sets a `remember_token` cookie. During logout, `logout_user()` sets `session['_remember'] = 'clear'`. However, `session.clear()` was called immediately after `logout_user()`, which purged the `_remember` key from the session dictionary *before* Flask-Login's `@app.after_request` handler (`_update_remember_cookie`) could execute `self._clear_cookie(response)`. As a result, the browser retained the `remember_token` cookie and automatically re-authenticated on subsequent requests.
+  2. The root route `/` rendered `public/home.html` instead of redirecting unauthenticated visitors to `/login` and authenticated users to their respective role dashboards (Student / Coordinator / Admin).
+  3. Responses lacked explicit `delete_cookie` directives for `remember_token` and `session`.
+- **Files Changed**:
+  - `app/routes/pages.py`
+  - `app/routes/auth.py`
+  - `app/config.py`
+  - `tests/test_issue_fixes.py`
+- **Fix Applied**:
+  - **Explicit Cookie Deletion**: Updated `/logout` in `app/routes/pages.py` and `/api/v1/auth/logout` in `app/routes/auth.py` to explicitly call `response.delete_cookie(...)` for `remember_token`, `session`, `REMEMBER_COOKIE_NAME`, and `SESSION_COOKIE_NAME` with matching paths and domains on the redirect/API response.
+  - **Root Route Enforcement**: Modified `@pages_bp.route('/')` to check authentication status:
+    - If unauthenticated: 302 redirect to `/login`.
+    - If authenticated: 302 redirect to role-specific dashboard (`/admin/dashboard`, `/coordinator/dashboard`, or `/student/dashboard`).
+  - **Cookie Security Configuration**: Added explicit `REMEMBER_COOKIE_HTTPONLY = True`, `REMEMBER_COOKIE_SAMESITE = 'Lax'`, and environment-aware `REMEMBER_COOKIE_SECURE` (`True` in production, `False` in development/testing).
+- **Testing**:
+  - `tests/test_issue_fixes.py::test_root_url_redirects_by_authentication_and_role`
+  - `tests/test_issue_fixes.py::test_logout_removes_remember_and_session_cookies`
+- **Result**: **PASS**
+
+---
+
+## 11. Issue: Realistic Demonstration Data (5 Coordinators + 5 Events)
+
+- **Issue**: The platform required realistic demo/sample data (5 faculty coordinators and 5 college events) for presentations and committee reviews without using mock/duplicate databases.
+- **Fix Applied**:
+  - Created standalone and reusable seed module: `scripts/seed_demo_data.py`.
+  - Created exactly 5 unique, active coordinator accounts with `COORDINATOR` role and `CoordinatorProfile` records:
+    1. Prof. Rajesh Kulkarni (`coord1@itsa.edu`) - Assistant Professor & Faculty Coordinator
+    2. Dr. Sunita Patil (`coord2@itsa.edu`) - Associate Professor & Technical Head
+    3. Prof. Amit Deshmukh (`coord3@itsa.edu`) - Assistant Professor & Coding Club Lead
+    4. Dr. Neha Sharma (`coord4@itsa.edu`) - Assistant Professor & Workshop Convener
+    5. Prof. Vikram Joshi (`coord5@itsa.edu`) - Lecturer & Student Outreach Coordinator
+  - Created exactly 5 realistic ITSA events with valid categories, future dates, venues, capacities, and lead coordinator assignments via `EventCoordinator`:
+    1. TechFest 2026 (Category: Technical, Venue: Main University Auditorium, Lead: Prof. Rajesh Kulkarni)
+    2. CodeSprint 2026 (Category: Competition, Venue: Advanced Computing Laboratory, Lead: Dr. Sunita Patil)
+    3. AI & Future Technologies Workshop (Category: Workshop, Venue: Main University Auditorium, Lead: Prof. Amit Deshmukh)
+    4. Web Development Bootcamp (Category: Workshop, Venue: Advanced Computing Laboratory, Lead: Dr. Neha Sharma)
+    5. ITSA Innovation Meetup 2026 (Category: Seminar, Venue: Main University Auditorium, Lead: Prof. Vikram Joshi)
+  - Integrated `seed_demo_data(app)` into `scripts/init_prod_admin.py` so Render's `preDeployCommand` automatically seeds production data.
+  - Implemented strict idempotency: running the seed script multiple times produces zero duplicates.
+- **Testing**:
+  - `tests/test_issue_fixes.py::test_seed_demo_data_five_coordinators_and_five_events`
+- **Result**: **PASS**
+
+---
+
+## 12. Automated Test Summary
 
 ```
-====================== 31 passed, 667 warnings in 49.52s ======================
+====================== 36 passed, 835 warnings in 27.81s ======================
 ```
 
 | Test Suite File | Test Count | Pass Rate |
 | :--- | :--- | :--- |
-| `tests/test_issue_fixes.py` | 9 | **100% PASS** |
+| `tests/test_issue_fixes.py` | 12 | **100% PASS** |
 | `tests/test_admin_panel.py` | 5 | **100% PASS** |
 | `tests/test_auth.py` | 4 | **100% PASS** |
 | `tests/test_events.py` | 3 | **100% PASS** |
@@ -162,5 +212,6 @@
 | `tests/test_attendance.py` | 1 | **100% PASS** |
 | `tests/test_ai.py` | 2 | **100% PASS** |
 | `tests/test_social.py` | 2 | **100% PASS** |
-| `tests/test_security_and_edge_cases.py` | 2 | **100% PASS** |
-| **TOTAL** | **31** | **100% SUCCESS** |
+| `tests/test_security_and_edge_cases.py` | 4 | **100% PASS** |
+| **TOTAL** | **36** | **100% SUCCESS** |
+

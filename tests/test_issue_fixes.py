@@ -1,4 +1,5 @@
 import io
+from datetime import datetime
 import pytest
 from app.models.user import User, StudentProfile
 from app.models.post import Post
@@ -295,3 +296,128 @@ def test_media_gallery_upload_and_serving(auth_client_admin, app):
 
     res_del = auth_client_admin.post(f'/api/v1/admin/gallery/{gallery_id}')
     assert res_del.status_code == 200
+
+
+def test_root_url_redirects_by_authentication_and_role(app):
+    client = app.test_client()
+
+    # 1. Unauthenticated visiting "/" must redirect to /login
+    res = client.get('/')
+    assert res.status_code == 302
+    assert '/login' in res.location
+
+    # 2. Student authenticated visiting "/" redirects to /student/dashboard
+    client.post('/api/v1/auth/login', json={'email': 'test_student@itsa.edu', 'password': 'Student@12345'})
+    res_s = client.get('/')
+    assert res_s.status_code == 302
+    assert '/student/dashboard' in res_s.location
+    client.get('/logout')
+
+    # 3. Coordinator authenticated visiting "/" redirects to /coordinator/dashboard
+    client.post('/api/v1/auth/login', json={'email': 'test_coord@itsa.edu', 'password': 'Coord@12345'})
+    res_c = client.get('/')
+    assert res_c.status_code == 302
+    assert '/coordinator/dashboard' in res_c.location
+    client.get('/logout')
+
+    # 4. Admin authenticated visiting "/" redirects to /admin/dashboard
+    client.post('/api/v1/auth/login', json={'email': 'test_admin@itsa.edu', 'password': 'Admin@12345'})
+    res_a = client.get('/')
+    assert res_a.status_code == 302
+    assert '/admin/dashboard' in res_a.location
+    client.get('/logout')
+
+
+def test_logout_removes_remember_and_session_cookies(app):
+    client = app.test_client()
+
+    # 1. Login with remember=True
+    res_login = client.post('/api/v1/auth/login', json={
+        'email': 'test_student@itsa.edu',
+        'password': 'Student@12345',
+        'remember': True
+    })
+    assert res_login.status_code == 200
+
+    # Verify student dashboard accessible
+    res_dash = client.get('/student/dashboard')
+    assert res_dash.status_code == 200
+
+    # 2. Logout
+    res_logout = client.get('/logout')
+    assert res_logout.status_code == 302
+    assert '/login' in res_logout.location
+
+    # Check that Set-Cookie headers invalidate remember_token and session
+    set_cookies = res_logout.headers.getlist('Set-Cookie')
+    set_cookie_text = " ".join(set_cookies)
+    assert 'remember_token' in set_cookie_text or 'session' in set_cookie_text
+
+    # 3. Attempting to visit / after logout must redirect to /login (NO auto-login)
+    res_home = client.get('/')
+    assert res_home.status_code == 302
+    assert '/login' in res_home.location
+
+    # 4. Protected route must require login
+    res_prot = client.get('/student/dashboard')
+    assert res_prot.status_code == 302
+    assert '/login' in res_prot.location
+
+
+def test_seed_demo_data_five_coordinators_and_five_events(app):
+    from scripts.seed_demo_data import seed_demo_data
+    from app.models.event import Event, EventCoordinator
+
+    # 1. Run seed
+    seed_demo_data(app)
+
+    coord_emails = [
+        "coord1@itsa.edu",
+        "coord2@itsa.edu",
+        "coord3@itsa.edu",
+        "coord4@itsa.edu",
+        "coord5@itsa.edu"
+    ]
+    with app.app_context():
+        coords = User.query.filter(User.email.in_(coord_emails)).all()
+        assert len(coords) == 5
+        for c in coords:
+            assert c.role == 'COORDINATOR'
+            assert c.is_active is True
+            assert c.coordinator_profile is not None
+
+        event_titles = [
+            "TechFest 2026",
+            "CodeSprint 2026",
+            "AI & Future Technologies Workshop",
+            "Web Development Bootcamp",
+            "ITSA Innovation Meetup 2026"
+        ]
+        events = Event.query.filter(Event.title.in_(event_titles)).all()
+        assert len(events) == 5
+        for e in events:
+            assert e.status == 'REGISTRATION_OPEN'
+            assert e.start_datetime > datetime.utcnow()
+            # Verify coordinator assigned
+            assigned = EventCoordinator.query.filter_by(event_id=e.id).all()
+            assert len(assigned) >= 1
+
+    # 2. Re-run seed (Idempotency check)
+    seed_demo_data(app)
+    with app.app_context():
+        coords_second = User.query.filter(User.email.in_(coord_emails)).all()
+        assert len(coords_second) == 5
+
+        events_second = Event.query.filter(Event.title.in_(event_titles)).all()
+        assert len(events_second) == 5
+
+    # 3. Check events appear in public events listing
+    import html
+    client = app.test_client()
+    res_events = client.get('/events')
+    assert res_events.status_code == 200
+    html_text = res_events.get_data(as_text=True)
+    for title in event_titles:
+        assert (title in html_text or html.escape(title) in html_text)
+
+

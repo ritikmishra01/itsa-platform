@@ -113,6 +113,10 @@ def init_production_system(app=None):
                     db.session.commit()
                     print(f"[+] Production Administrator account state confirmed for {admin.email}.")
 
+            # 4. Idempotently ensure 5 demo coordinators and 5 events exist
+            from scripts.seed_demo_data import seed_demo_data
+            seed_demo_data(app)
+
             print("[OK] Production initialization completed successfully.")
     except Exception as e:
         print(f"[!] Database Connection / Initialization Error: {e}")
