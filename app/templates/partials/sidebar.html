@@ -1,0 +1,184 @@
+{# Sidebar Partial — Role-aware persistent navigation #}
+<!-- Sidebar Brand Header -->
+<div class="sidebar-brand">
+  <a href="{% if current_user.is_admin %}{{ url_for('pages.admin_dashboard') }}{% elif current_user.is_coordinator %}{{ url_for('pages.coordinator_dashboard') }}{% else %}{{ url_for('pages.student_dashboard') }}{% endif %}" class="d-flex align-items-center gap-2 text-decoration-none flex-grow-1">
+    <div class="sidebar-logo">
+      <i class="bi bi-cpu-fill"></i>
+    </div>
+    <span class="sidebar-brand-text">ITSA <span class="text-brand-gradient">AI</span></span>
+  </a>
+  <!-- Desktop Collapse Toggle -->
+  <button class="topbar-icon-btn btn border-0 d-none d-lg-flex" data-sidebar-toggle aria-label="Toggle sidebar collapse" type="button">
+    <i class="bi bi-layout-sidebar"></i>
+  </button>
+</div>
+
+<!-- Navigation List -->
+<nav class="sidebar-nav" role="navigation">
+
+  {# ==================== STUDENT NAV ==================== #}
+  {% if current_user.is_student %}
+  <div class="sidebar-section-header">Student Hub</div>
+  <a href="{{ url_for('pages.student_dashboard') }}" class="sidebar-nav-item {% if active_page == 'dashboard' %}active{% endif %}">
+    <i class="bi bi-grid-1x2 sidebar-icon"></i>
+    <span class="sidebar-label">Dashboard</span>
+  </a>
+  <a href="{{ url_for('pages.events_page') }}" class="sidebar-nav-item {% if active_page == 'events' %}active{% endif %}">
+    <i class="bi bi-calendar-event sidebar-icon"></i>
+    <span class="sidebar-label">Browse Events</span>
+  </a>
+  <a href="{{ url_for('pages.my_tickets') }}" class="sidebar-nav-item {% if active_page == 'tickets' %}active{% endif %}">
+    <i class="bi bi-ticket-perforated sidebar-icon"></i>
+    <span class="sidebar-label">My Tickets (QR)</span>
+  </a>
+  <a href="{{ url_for('pages.my_attendance') }}" class="sidebar-nav-item {% if active_page == 'attendance' %}active{% endif %}">
+    <i class="bi bi-check2-circle sidebar-icon"></i>
+    <span class="sidebar-label">Attendance History</span>
+  </a>
+  <a href="{{ url_for('pages.my_certificates') }}" class="sidebar-nav-item {% if active_page == 'certificates' %}active{% endif %}">
+    <i class="bi bi-award sidebar-icon"></i>
+    <span class="sidebar-label">My Certificates</span>
+  </a>
+  
+  <div class="sidebar-section-header">Engagement</div>
+  <a href="{{ url_for('pages.social_feed') }}" class="sidebar-nav-item {% if active_page == 'feed' %}active{% endif %}">
+    <i class="bi bi-people sidebar-icon"></i>
+    <span class="sidebar-label">Community Feed</span>
+  </a>
+  <a href="{{ url_for('pages.leaderboard_page') }}" class="sidebar-nav-item {% if active_page == 'leaderboard' %}active{% endif %}">
+    <i class="bi bi-trophy sidebar-icon"></i>
+    <span class="sidebar-label">Leaderboard</span>
+  </a>
+  <a href="{{ url_for('pages.chatbot_page') }}" class="sidebar-nav-item {% if active_page == 'chatbot' %}active{% endif %}">
+    <i class="bi bi-robot sidebar-icon" style="color: var(--brand-500);"></i>
+    <span class="sidebar-label">AI Assistant</span>
+  </a>
+  <a href="{{ url_for('pages.notifications_page') }}" class="sidebar-nav-item {% if active_page == 'notifications' %}active{% endif %}">
+    <i class="bi bi-bell sidebar-icon"></i>
+    <span class="sidebar-label">Notifications</span>
+    {% if unread_notifications_count > 0 %}
+    <span class="badge rounded-pill ms-auto" style="background: var(--danger-solid); font-size: 0.7rem;">{{ unread_notifications_count }}</span>
+    {% endif %}
+  </a>
+
+  {# ==================== COORDINATOR NAV ==================== #}
+  {% elif current_user.is_coordinator %}
+  <div class="sidebar-section-header">Operations</div>
+  <a href="{{ url_for('pages.coordinator_dashboard') }}" class="sidebar-nav-item {% if active_page == 'dashboard' %}active{% endif %}">
+    <i class="bi bi-grid-1x2 sidebar-icon"></i>
+    <span class="sidebar-label">Coordinator Hub</span>
+  </a>
+  <a href="{{ url_for('pages.coordinator_dashboard') }}" class="sidebar-nav-item {% if active_page == 'scanner' %}active{% endif %}">
+    <i class="bi bi-qr-code-scan sidebar-icon" style="color: var(--brand-500);"></i>
+    <span class="sidebar-label">Live QR Scanner</span>
+  </a>
+  <a href="{{ url_for('pages.events_page') }}" class="sidebar-nav-item {% if active_page == 'events' %}active{% endif %}">
+    <i class="bi bi-calendar-event sidebar-icon"></i>
+    <span class="sidebar-label">All Events</span>
+  </a>
+  <a href="{{ url_for('pages.social_feed') }}" class="sidebar-nav-item {% if active_page == 'feed' %}active{% endif %}">
+    <i class="bi bi-people sidebar-icon"></i>
+    <span class="sidebar-label">Community Feed</span>
+  </a>
+  <a href="{{ url_for('pages.leaderboard_page') }}" class="sidebar-nav-item {% if active_page == 'leaderboard' %}active{% endif %}">
+    <i class="bi bi-trophy sidebar-icon"></i>
+    <span class="sidebar-label">Leaderboard</span>
+  </a>
+  <a href="{{ url_for('pages.notifications_page') }}" class="sidebar-nav-item {% if active_page == 'notifications' %}active{% endif %}">
+    <i class="bi bi-bell sidebar-icon"></i>
+    <span class="sidebar-label">Notifications</span>
+    {% if unread_notifications_count > 0 %}
+    <span class="badge rounded-pill ms-auto" style="background: var(--danger-solid); font-size: 0.7rem;">{{ unread_notifications_count }}</span>
+    {% endif %}
+  </a>
+
+  {# ==================== ADMIN NAV ==================== #}
+  {% elif current_user.is_admin %}
+  <div class="sidebar-section-header">Control Center</div>
+  <a href="{{ url_for('pages.admin_dashboard') }}" class="sidebar-nav-item {% if active_page == 'dashboard' %}active{% endif %}">
+    <i class="bi bi-speedometer2 sidebar-icon"></i>
+    <span class="sidebar-label">Dashboard</span>
+  </a>
+
+  <div class="sidebar-section-header">Core Operations</div>
+  <a href="{{ url_for('pages.admin_users') }}" class="sidebar-nav-item {% if active_page == 'users' %}active{% endif %}">
+    <i class="bi bi-people sidebar-icon"></i>
+    <span class="sidebar-label">User Directory</span>
+  </a>
+  <a href="{{ url_for('pages.admin_events') }}" class="sidebar-nav-item {% if active_page == 'events' %}active{% endif %}">
+    <i class="bi bi-calendar-event sidebar-icon"></i>
+    <span class="sidebar-label">Event Lifecycle</span>
+  </a>
+  <a href="{{ url_for('pages.admin_registrations') }}" class="sidebar-nav-item {% if active_page == 'registrations' %}active{% endif %}">
+    <i class="bi bi-ticket-perforated sidebar-icon"></i>
+    <span class="sidebar-label">Registrations & Tickets</span>
+  </a>
+  <a href="{{ url_for('pages.admin_attendance') }}" class="sidebar-nav-item {% if active_page == 'attendance' %}active{% endif %}">
+    <i class="bi bi-qr-code-scan sidebar-icon"></i>
+    <span class="sidebar-label">QR Attendance</span>
+  </a>
+  <a href="{{ url_for('pages.admin_certificates') }}" class="sidebar-nav-item {% if active_page == 'certificates' %}active{% endif %}">
+    <i class="bi bi-award sidebar-icon"></i>
+    <span class="sidebar-label">Certificate Center</span>
+  </a>
+
+  <div class="sidebar-section-header">Platform Engagement</div>
+  <a href="{{ url_for('pages.admin_community') }}" class="sidebar-nav-item {% if active_page == 'community' or active_page == 'moderation' %}active{% endif %}">
+    <i class="bi bi-chat-heart sidebar-icon"></i>
+    <span class="sidebar-label">Community & Moderation</span>
+  </a>
+  <a href="{{ url_for('pages.admin_notifications') }}" class="sidebar-nav-item {% if active_page == 'notifications' %}active{% endif %}">
+    <i class="bi bi-megaphone sidebar-icon"></i>
+    <span class="sidebar-label">Broadcast Center</span>
+    {% if unread_notifications_count > 0 %}
+    <span class="badge rounded-pill ms-auto" style="background: var(--danger-solid); font-size: 0.7rem;">{{ unread_notifications_count }}</span>
+    {% endif %}
+  </a>
+  <a href="{{ url_for('pages.admin_gamification') }}" class="sidebar-nav-item {% if active_page == 'gamification' %}active{% endif %}">
+    <i class="bi bi-trophy sidebar-icon"></i>
+    <span class="sidebar-label">Gamification</span>
+  </a>
+
+  <div class="sidebar-section-header">Intelligence & Logs</div>
+  <a href="{{ url_for('pages.admin_ai_center') }}" class="sidebar-nav-item {% if active_page == 'ai_center' %}active{% endif %}">
+    <i class="bi bi-robot sidebar-icon" style="color: var(--brand-500);"></i>
+    <span class="sidebar-label">AI Center (Gemini)</span>
+  </a>
+  <a href="{{ url_for('pages.admin_analytics') }}" class="sidebar-nav-item {% if active_page == 'analytics' %}active{% endif %}">
+    <i class="bi bi-bar-chart-line sidebar-icon"></i>
+    <span class="sidebar-label">Deep Analytics</span>
+  </a>
+  <a href="{{ url_for('pages.admin_audit_logs') }}" class="sidebar-nav-item {% if active_page == 'audit_logs' %}active{% endif %}">
+    <i class="bi bi-shield-check sidebar-icon"></i>
+    <span class="sidebar-label">Audit Logs</span>
+  </a>
+  <a href="{{ url_for('pages.admin_settings') }}" class="sidebar-nav-item {% if active_page == 'settings' %}active{% endif %}">
+    <i class="bi bi-gear sidebar-icon"></i>
+    <span class="sidebar-label">System Settings</span>
+  </a>
+  {% endif %}
+
+</nav>
+
+<!-- Sidebar User Footer -->
+<div class="sidebar-footer">
+  <div class="sidebar-user">
+    <div class="sidebar-user-avatar">
+      {{ current_user.full_name[0] | upper }}
+    </div>
+    <div class="sidebar-user-info">
+      <div class="fw-semibold text-truncate" style="max-width: 130px; font-size: 0.8125rem; color: var(--text-primary);">{{ current_user.full_name }}</div>
+      <div class="text-muted small" style="font-size: 0.7rem;">{{ current_user.role }}</div>
+    </div>
+    <div class="dropdown ms-auto">
+      <button class="topbar-icon-btn btn border-0 btn-sm" data-bs-toggle="dropdown" aria-label="User Options">
+        <i class="bi bi-three-dots-vertical"></i>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0" style="border-radius: var(--radius-lg); background: var(--surface-card); border: 1px solid var(--border-subtle) !important;">
+        <li><a class="dropdown-item py-2" href="{{ url_for('pages.profile_page') }}"><i class="bi bi-person-gear me-2"></i> Edit Profile</a></li>
+        <li><hr class="dropdown-divider my-1"></li>
+        <li><a class="dropdown-item py-2 text-danger" href="{{ url_for('pages.logout') }}"><i class="bi bi-box-arrow-right me-2"></i> Sign Out</a></li>
+      </ul>
+    </div>
+  </div>
+</div>

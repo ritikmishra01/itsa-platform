@@ -1,82 +1,71 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}{{ event.title }}{% endblock %}
 
 {% block content %}
-<div class="container py-3">
+<div class="container-fluid p-0">
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url_for('pages.home') }}">Home</a></li>
-            <li class="breadcrumb-item"><a href="{{ url_for('pages.events_page') }}">Events</a></li>
-            <li class="breadcrumb-item active">{{ event.title }}</li>
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="{{ url_for('pages.home') }}" class="text-decoration-none text-muted">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('pages.events_page') }}" class="text-decoration-none text-muted">Events</a></li>
+            <li class="breadcrumb-item active fw-semibold" style="color: var(--brand-500);">{{ event.title }}</li>
         </ol>
     </nav>
 
     <div class="row g-4">
         <!-- Event Details Column -->
         <div class="col-lg-8">
-            <div class="card card-itsa p-4 mb-4">
+            <div class="card-surface p-4 mb-4">
                 {% if event.poster_image %}
-                <img src="{{ url_for('pages.serve_upload', filename=event.poster_image.replace('uploads/', '')) }}" class="rounded-3 mb-4 w-100 object-fit-cover shadow-sm" style="max-height: 380px;" alt="{{ event.title }}">
+                <img src="{{ url_for('pages.serve_upload', filename=event.poster_image.replace('uploads/', '')) }}" class="rounded-lg mb-4 w-100 object-fit-cover shadow-sm" style="max-height: 380px;" alt="{{ event.title }}">
                 {% endif %}
 
                 <div class="d-flex flex-wrap gap-2 mb-3">
-                    <span class="badge bg-primary fs-6">{{ event.category.name if event.category else 'General' }}</span>
-                    <span class="badge bg-dark fs-6">{{ event.status }}</span>
+                    <span class="badge-brand">{{ event.category.name if event.category else 'General' }}</span>
+                    <span class="badge-warning-soft">{{ event.status }}</span>
                     {% if event.is_free %}
-                    <span class="badge bg-success fs-6">Free Entry</span>
+                    <span class="badge-success-soft">Free Entry</span>
                     {% else %}
-                    <span class="badge bg-info fs-6">Fee: ₹{{ event.registration_fee }}</span>
+                    <span class="badge-info-soft">Fee: ₹{{ event.registration_fee }}</span>
                     {% endif %}
                 </div>
 
-                <h2 class="fw-bold mb-3">{{ event.title }}</h2>
+                <h2 class="fw-bold mb-3" style="color: var(--text-primary);">{{ event.title }}</h2>
 
-                <div class="row g-3 py-3 border-top border-bottom my-3 bg-light rounded-3 px-2">
+                <div class="row g-3 py-3 border-top border-bottom my-3 rounded-md px-2" style="background: var(--surface-subtle); border-color: var(--border-subtle) !important;">
                     <div class="col-sm-6 col-md-3">
                         <div class="small text-muted"><i class="bi bi-calendar-event me-1"></i> Date</div>
-                        <div class="fw-semibold">{{ event.start_datetime.strftime('%b %d, %Y') }}</div>
+                        <div class="fw-semibold" style="color: var(--text-primary);">{{ event.start_datetime.strftime('%b %d, %Y') }}</div>
                     </div>
                     <div class="col-sm-6 col-md-3">
                         <div class="small text-muted"><i class="bi bi-clock me-1"></i> Time</div>
-                        <div class="fw-semibold">{{ event.start_datetime.strftime('%I:%M %p') }}</div>
+                        <div class="fw-semibold" style="color: var(--text-primary);">{{ event.start_datetime.strftime('%I:%M %p') }}</div>
                     </div>
                     <div class="col-sm-6 col-md-3">
                         <div class="small text-muted"><i class="bi bi-geo-alt me-1"></i> Venue</div>
-                        <div class="fw-semibold">{{ event.venue.name if event.venue else 'TBA' }}</div>
+                        <div class="fw-semibold" style="color: var(--text-primary);">{{ event.venue.name if event.venue else 'TBA' }}</div>
                     </div>
                     <div class="col-sm-6 col-md-3">
                         <div class="small text-muted"><i class="bi bi-hourglass-split me-1"></i> Deadline</div>
-                        <div class="fw-semibold">{{ event.registration_deadline.strftime('%b %d') }}</div>
+                        <div class="fw-semibold" style="color: var(--text-primary);">{{ event.registration_deadline.strftime('%b %d') }}</div>
                     </div>
                 </div>
 
-                <h5 class="fw-bold mt-4 mb-3">About This Event</h5>
-                <div class="text-secondary lh-lg mb-4" style="white-space: pre-line;">
+                <h5 class="fw-bold mt-4 mb-3" style="color: var(--text-primary);">About This Event</h5>
+                <div class="lh-lg mb-4" style="color: var(--text-secondary); white-space: pre-line;">
                     {{ event.description }}
                 </div>
-
-                {% if event.tags %}
-                <div class="mb-4">
-                    <h6 class="fw-bold mb-2">Tags</h6>
-                    <div class="d-flex flex-wrap gap-2">
-                        {% for tag in event.tags.split(',') %}
-                        <span class="badge bg-light text-dark border">#{{ tag.strip() }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
             </div>
 
             <!-- Feedback Section if Attended -->
             {% if user_attended %}
-            <div class="card card-itsa p-4 mb-4">
-                <h5 class="fw-bold mb-3"><i class="bi bi-star-fill text-warning me-2"></i> Submit Event Feedback</h5>
+            <div class="card-surface p-4 mb-4">
+                <h5 class="fw-bold mb-3" style="color: var(--text-primary);"><i class="bi bi-star-fill text-warning me-2"></i> Submit Event Feedback</h5>
                 <form id="feedbackForm">
                     <input type="hidden" name="event_id" value="{{ event.id }}">
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold">Overall Rating (1 to 5 Stars) *</label>
-                        <select class="form-select" name="rating" required>
+                        <label class="form-label-modern">Overall Rating (1 to 5 Stars) *</label>
+                        <select class="form-select-modern" name="rating" required>
                             <option value="5">⭐⭐⭐⭐⭐ (5 - Excellent)</option>
                             <option value="4">⭐⭐⭐⭐ (4 - Very Good)</option>
                             <option value="3">⭐⭐⭐ (3 - Good)</option>
@@ -85,85 +74,86 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold">What did you like best?</label>
-                        <textarea class="form-control" name="content" rows="2" placeholder="Your thoughts on content, speakers, organization..."></textarea>
+                        <label class="form-label-modern">What did you like best?</label>
+                        <textarea class="form-control-modern" name="content" rows="2" placeholder="Your thoughts on content, speakers, organization..."></textarea>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold">Suggestions for improvement</label>
-                        <textarea class="form-control" name="suggestions" rows="2" placeholder="How can we make future events better?"></textarea>
+                        <label class="form-label-modern">Suggestions for improvement</label>
+                        <textarea class="form-control-modern" name="suggestions" rows="2" placeholder="How can we make future events better?"></textarea>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-send me-1"></i> Submit Feedback (+5 Points)</button>
+                    <button type="submit" class="btn btn-brand btn-sm"><i class="bi bi-send me-1"></i> Submit Feedback (+5 Points)</button>
                 </form>
             </div>
             {% endif %}
         </div>
 
-        <!-- Registration / Action Column -->
+        <!-- Registration Card Column -->
         <div class="col-lg-4">
-            <div class="card card-itsa p-4 sticky-top" style="top: 90px;">
-                <h5 class="fw-bold mb-3">Registration Status</h5>
+            <div class="card-surface p-4 sticky-top" style="top: 84px;">
+                <h5 class="fw-bold mb-3" style="color: var(--text-primary);">Registration Status</h5>
 
-                <div class="d-flex justify-content-between mb-2">
+                <div class="d-flex justify-content-between mb-2 small">
                     <span class="text-muted">Capacity:</span>
-                    <span class="fw-bold">{{ event.max_participants if event.max_participants else 'Unlimited' }}</span>
+                    <span class="fw-bold" style="color: var(--text-primary);">{{ event.max_participants if event.max_participants else 'Unlimited' }}</span>
                 </div>
-                <div class="d-flex justify-content-between mb-3">
+                <div class="d-flex justify-content-between mb-3 small">
                     <span class="text-muted">Registered:</span>
-                    <span class="fw-bold text-primary">{{ event.current_registrations }}</span>
+                    <span class="fw-bold" style="color: var(--brand-500);">{{ event.current_registrations }}</span>
                 </div>
 
                 {% if event.max_participants %}
-                <div class="progress mb-4" style="height: 8px;">
+                <div class="points-bar-track mb-4">
                     {% set pct = (event.current_registrations / event.max_participants * 100)|int %}
-                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ pct }}%"></div>
+                    <div class="points-bar-fill" style="width: {{ pct }}%;"></div>
                 </div>
                 {% endif %}
 
                 {% if user_registered %}
-                    <div class="alert alert-success d-flex align-items-center gap-2 mb-3">
+                    <div class="p-3 mb-3 rounded-md d-flex align-items-center gap-2" style="background: var(--success-bg); border: 1px solid var(--success-border); color: var(--success-text);">
                         <i class="bi bi-check-circle-fill fs-5"></i>
                         <div>
-                            <div class="fw-bold">You are Registered!</div>
-                            <div class="small">Ticket generated successfully</div>
+                            <div class="fw-bold small">You are Registered!</div>
+                            <div class="text-xs">Ticket generated successfully</div>
                         </div>
                     </div>
 
                     {% if user_ticket %}
-                    <div class="text-center p-3 border rounded-3 bg-light mb-3">
-                        <div class="small text-muted mb-2">Digital QR Ticket</div>
-                        <img src="{{ url_for('pages.serve_upload', filename=user_ticket.qr_image_path.replace('uploads/', '')) }}" class="img-fluid rounded border mb-2" style="max-width: 160px;" alt="QR Ticket">
-                        <div class="font-monospace small fw-bold">{{ user_ticket.ticket_code }}</div>
-                        <div class="small text-muted mt-1">Show this QR to the coordinator at venue gate</div>
+                    <div class="ticket-card my-3" style="border: 1px solid var(--border-subtle);">
+                        <div class="ticket-body text-center p-3">
+                            <div class="small text-muted font-mono mb-2" style="font-size: 0.75rem;">OFFICIAL DIGITAL TICKET</div>
+                            <img src="{{ url_for('pages.serve_upload', filename=user_ticket.qr_image_path.replace('uploads/', '')) }}" class="img-fluid rounded border mb-2" style="max-width: 150px;" alt="QR Ticket">
+                            <div class="font-mono small fw-bold" style="color: var(--text-primary);">{{ user_ticket.ticket_code }}</div>
+                        </div>
                     </div>
                     {% endif %}
 
                     {% if user_attended %}
-                    <div class="alert alert-primary d-flex align-items-center gap-2">
+                    <div class="p-3 rounded-md d-flex align-items-center gap-2 mt-2" style="background: var(--brand-50); border: 1px solid var(--brand-200);">
                         <i class="bi bi-patch-check-fill fs-5 text-primary"></i>
                         <div>
-                            <div class="fw-bold">Attendance Verified</div>
-                            <a href="{{ url_for('pages.my_certificates') }}" class="small fw-semibold text-primary">Download Certificate</a>
+                            <div class="fw-bold small" style="color: var(--brand-700);">Attendance Verified</div>
+                            <a href="{{ url_for('pages.my_certificates') }}" class="small fw-semibold text-primary">Download Certificate &rarr;</a>
                         </div>
                     </div>
                     {% endif %}
 
                 {% elif not current_user.is_authenticated %}
                     <p class="text-muted small mb-3">Please sign in as a student to register and receive your digital QR entry ticket.</p>
-                    <a href="{{ url_for('pages.login_page') }}" class="btn btn-primary w-100 mb-2">Log In to Register</a>
-                    <a href="{{ url_for('pages.register_page') }}" class="btn btn-outline-primary w-100">Create Student Account</a>
+                    <a href="{{ url_for('pages.login_page') }}" class="btn btn-brand w-100 mb-2">Sign In to Register</a>
+                    <a href="{{ url_for('pages.register_page') }}" class="btn btn-brand-outline w-100">Create Student Account</a>
                 {% elif not current_user.is_student %}
-                    <div class="alert alert-warning small">
+                    <div class="p-3 rounded-md small" style="background: var(--warning-bg); border: 1px solid var(--warning-border); color: var(--warning-text);">
                         Logged in as <b>{{ current_user.role }}</b>. Registrations are reserved for students.
                     </div>
                 {% elif event.status != 'REGISTRATION_OPEN' %}
-                    <div class="alert alert-secondary text-center">
+                    <div class="p-3 rounded-md text-center small text-muted" style="background: var(--surface-subtle); border: 1px solid var(--border-subtle);">
                         Registration is currently <b>{{ event.status }}</b>.
                     </div>
                 {% else %}
-                    <button id="btnRegister" class="btn btn-primary btn-lg w-100 shadow">
+                    <button id="btnRegister" class="btn btn-brand btn-lg w-100 shadow-sm">
                         <i class="bi bi-ticket-perforated me-2"></i> Register for Event
                     </button>
-                    <div class="form-text text-center mt-2 small text-muted">
+                    <div class="text-center mt-2 small text-muted" style="font-size: 0.75rem;">
                         Earn +3 ITSA Points on confirmed registration
                     </div>
                 {% endif %}
@@ -182,25 +172,13 @@ if (btnReg) {
         this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Registering...';
         try {
             await apiCall('/api/v1/events/{{ event.id }}/register', 'POST');
-            showToast('Registration successful! Reloading ticket...', 'success');
-            setTimeout(() => window.location.reload(), 1000);
+            if (window.ITSA && window.ITSA.confetti) window.ITSA.confetti.burst();
+            if (window.ITSA && window.ITSA.toast) window.ITSA.toast.success('Success!', 'Registration confirmed (+3 pts).');
+            setTimeout(() => window.location.reload(), 1200);
         } catch (err) {
             this.disabled = false;
             this.innerHTML = '<i class="bi bi-ticket-perforated me-2"></i> Register for Event';
         }
-    });
-}
-
-const fbForm = document.getElementById('feedbackForm');
-if (fbForm) {
-    fbForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const data = Object.fromEntries(new FormData(this));
-        try {
-            await apiCall('/api/v1/feedback', 'POST', data);
-            showToast('Thank you! Feedback recorded (+5 ITSA points)', 'success');
-            setTimeout(() => window.location.reload(), 1000);
-        } catch (err) {}
     });
 }
 </script>

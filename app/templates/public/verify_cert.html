@@ -1,52 +1,52 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}Verify Certificate Authenticity{% endblock %}
 
 {% block content %}
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-md-7 col-lg-6">
-            <div class="card card-itsa p-4 shadow-sm text-center">
-                <div class="bg-primary text-white p-3 rounded-circle d-inline-flex align-items-center justify-content-center mb-3 mx-auto" style="width: 60px; height: 60px;">
-                    <i class="bi bi-patch-check-fill fs-2"></i>
+            <div class="card-surface p-4 text-center">
+                <div class="stat-icon-wrap stat-icon-brand mx-auto mb-3" style="width: 60px; height: 60px; font-size: 1.75rem;">
+                    <i class="bi bi-patch-check-fill"></i>
                 </div>
-                <h3 class="fw-bold">Verify Certificate</h3>
-                <p class="text-muted small mb-4">Validate the authenticity of official ITSA event participation & winner certificates</p>
+                <h3 class="fw-bold mb-1" style="color: var(--text-primary);">Verify Certificate</h3>
+                <p class="text-muted small mb-4">Validate the authenticity of official ITSA event participation & winner credentials</p>
 
                 <form method="GET" action="{{ url_for('pages.verify_certificate_page') }}" class="mb-4">
-                    <div class="input-group input-group-lg">
-                        <input type="text" class="form-control font-monospace" name="code" value="{{ code or '' }}" required placeholder="e.g. ITSA-CERT-uuid">
-                        <button class="btn btn-primary" type="submit">Verify</button>
+                    <div class="input-group">
+                        <input type="text" class="form-control-modern font-mono" name="code" value="{{ code or '' }}" required placeholder="e.g. ITSA-CERT-UUID">
+                        <button class="btn btn-brand" type="submit">Verify</button>
                     </div>
                 </form>
 
                 {% if cert_data %}
-                    <div class="alert alert-success text-start p-4 rounded-3 border-success shadow-sm">
-                        <div class="d-flex align-items-center gap-2 mb-3">
-                            <i class="bi bi-check-circle-fill text-success fs-3"></i>
+                    <div class="p-4 text-start rounded-lg border shadow-sm" style="background: var(--success-bg); border-color: var(--success-border) !important;">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <i class="bi bi-check-circle-fill text-success fs-2"></i>
                             <div>
                                 <h5 class="fw-bold mb-0 text-success">Official Certificate Verified</h5>
-                                <div class="small text-muted font-monospace">{{ cert_data.certificate_code }}</div>
+                                <div class="small font-mono text-muted">{{ cert_data.certificate_code }}</div>
                             </div>
                         </div>
-                        <div class="row g-2 border-top pt-3">
-                            <div class="col-sm-4 text-muted small">Student Name:</div>
-                            <div class="col-sm-8 fw-bold">{{ cert_data.student_name }}</div>
+                        <div class="row g-2 border-top pt-3 small" style="border-color: var(--success-border) !important;">
+                            <div class="col-sm-4 text-muted">Recipient:</div>
+                            <div class="col-sm-8 fw-bold" style="color: var(--text-primary);">{{ cert_data.student_name }}</div>
 
-                            <div class="col-sm-4 text-muted small">Event Name:</div>
-                            <div class="col-sm-8 fw-bold">{{ cert_data.event_title }}</div>
+                            <div class="col-sm-4 text-muted">Event:</div>
+                            <div class="col-sm-8 fw-bold" style="color: var(--text-primary);">{{ cert_data.event_title }}</div>
 
-                            <div class="col-sm-4 text-muted small">Event Date:</div>
-                            <div class="col-sm-8">{{ cert_data.event_date }}</div>
+                            <div class="col-sm-4 text-muted">Date:</div>
+                            <div class="col-sm-8" style="color: var(--text-secondary);">{{ cert_data.event_date }}</div>
 
-                            <div class="col-sm-4 text-muted small">Certificate Type:</div>
-                            <div class="col-sm-8"><span class="badge bg-primary">{{ cert_data.certificate_type }}</span></div>
+                            <div class="col-sm-4 text-muted">Type:</div>
+                            <div class="col-sm-8"><span class="badge-brand">{{ cert_data.certificate_type }}</span></div>
 
-                            <div class="col-sm-4 text-muted small">Issued On:</div>
-                            <div class="col-sm-8">{{ cert_data.issued_at }}</div>
+                            <div class="col-sm-4 text-muted">Issued On:</div>
+                            <div class="col-sm-8" style="color: var(--text-secondary);">{{ cert_data.issued_at }}</div>
                         </div>
                     </div>
                 {% elif err_msg %}
-                    <div class="alert alert-danger text-start p-3 rounded-3">
+                    <div class="p-3 text-start rounded-md border" style="background: var(--danger-bg); border-color: var(--danger-border) !important; color: var(--danger-text);">
                         <i class="bi bi-x-circle-fill me-2"></i> {{ err_msg }}
                     </div>
                 {% endif %}

@@ -1,0 +1,469 @@
+/* ==========================================================================
+   ITSA PLATFORM — LAYOUT & NAVIGATION
+   Persistent sidebar, sticky topbar, responsive drawer & command palette
+   ========================================================================== */
+
+#app-root {
+  display: flex;
+  min-height: 100vh;
+  background: var(--surface-canvas);
+}
+
+/* ==========================================================================
+   1. SIDEBAR
+   ========================================================================== */
+#app-sidebar {
+  width: var(--sidebar-width);
+  min-height: 100vh;
+  background: var(--surface-sidebar);
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 100;
+  transition: width var(--dur-base) var(--ease-smooth), transform var(--dur-base) var(--ease-smooth);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+#app-main {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  transition: margin-left var(--dur-base) var(--ease-smooth);
+}
+
+/* Collapsed Sidebar State */
+body.sidebar-collapsed #app-sidebar {
+  width: var(--sidebar-collapsed-width);
+}
+body.sidebar-collapsed #app-main {
+  margin-left: var(--sidebar-collapsed-width);
+}
+body.sidebar-collapsed .sidebar-label,
+body.sidebar-collapsed .sidebar-brand-text,
+body.sidebar-collapsed .sidebar-section-header,
+body.sidebar-collapsed .sidebar-user-info {
+  display: none !important;
+}
+body.sidebar-collapsed .sidebar-nav-item {
+  justify-content: center;
+  padding: 10px;
+}
+body.sidebar-collapsed .sidebar-user {
+  justify-content: center;
+}
+
+/* Sidebar Internal */
+.sidebar-brand {
+  height: var(--topbar-height);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.sidebar-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: var(--brand-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.sidebar-brand-text {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 12px 8px;
+  overflow-y: auto;
+}
+.sidebar-section-header {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  padding: 18px 12px 6px;
+}
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--dur-fast);
+  margin-bottom: 2px;
+}
+.sidebar-nav-item:hover {
+  background: var(--surface-subtle);
+  color: var(--text-primary);
+}
+.sidebar-nav-item.active {
+  background: var(--brand-50);
+  color: var(--brand-600);
+  font-weight: 600;
+}
+[data-bs-theme="dark"] .sidebar-nav-item.active {
+  color: var(--brand-400);
+}
+.sidebar-nav-item .sidebar-icon {
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sidebar-user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--brand-gradient);
+  color: #ffffff;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   2. TOPBAR
+   ========================================================================== */
+#app-topbar {
+  height: var(--topbar-height);
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  background: var(--surface-card);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-6);
+  gap: var(--space-4);
+}
+
+.topbar-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+}
+
+.topbar-search-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.875rem;
+  min-width: 240px;
+  transition: all var(--dur-fast);
+}
+.topbar-search-trigger:hover {
+  border-color: var(--border-strong);
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topbar-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--dur-fast);
+  position: relative;
+}
+.topbar-icon-btn:hover {
+  background: var(--surface-subtle);
+  color: var(--text-primary);
+}
+
+.notification-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: var(--danger-solid);
+  color: #ffffff;
+  border-radius: var(--radius-full);
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topbar-avatar-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--brand-gradient);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: box-shadow var(--dur-fast);
+}
+.topbar-avatar-btn:hover {
+  box-shadow: var(--shadow-glow);
+}
+
+/* ==========================================================================
+   3. NOTIFICATIONS DROPDOWN
+   ========================================================================== */
+.notif-dropdown {
+  width: 360px;
+  max-width: calc(100vw - 2rem);
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+}
+.notif-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+.notif-list {
+  max-height: 320px;
+  overflow-y: auto;
+}
+.notif-item {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  transition: background var(--dur-fast);
+}
+.notif-item:hover {
+  background: var(--surface-subtle);
+}
+.notif-item.unread {
+  background: var(--brand-50);
+  border-left: 3px solid var(--brand-500);
+}
+.notif-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.notif-body {
+  flex: 1;
+}
+.notif-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+.notif-time {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.notif-footer {
+  padding: 10px 18px;
+  text-align: center;
+  background: var(--surface-subtle);
+}
+
+/* ==========================================================================
+   4. CONTENT CONTAINER
+   ========================================================================== */
+#app-content {
+  flex: 1;
+  padding: var(--space-6) var(--space-8);
+  max-width: 1440px;
+  width: 100%;
+}
+
+/* ==========================================================================
+   5. COMMAND PALETTE
+   ========================================================================== */
+.cmd-palette-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--surface-overlay);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 10vh;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-fast);
+}
+.cmd-palette-backdrop.open {
+  opacity: 1;
+  pointer-events: all;
+}
+.cmd-palette-modal {
+  width: 560px;
+  max-width: calc(100vw - 2rem);
+  background: var(--surface-card);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  transform: translateY(-8px);
+  transition: transform var(--dur-fast) var(--ease-spring);
+}
+.cmd-palette-backdrop.open .cmd-palette-modal {
+  transform: translateY(0);
+}
+.cmd-palette-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.cmd-palette-search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  color: var(--text-primary);
+  outline: none;
+}
+.cmd-palette-results {
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 8px;
+}
+.cmd-result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--dur-fast);
+}
+.cmd-result-item:hover,
+.cmd-result-item.active {
+  background: var(--surface-subtle);
+}
+.cmd-result-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--brand-50);
+  color: var(--brand-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cmd-palette-footer {
+  padding: 10px 20px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-subtle);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: 16px;
+}
+
+/* ==========================================================================
+   6. RESPONSIVE MEDIA QUERIES
+   ========================================================================== */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--surface-overlay);
+  z-index: 95;
+}
+
+@media (max-width: 1024px) {
+  #app-sidebar {
+    transform: translateX(-100%);
+  }
+  #app-main {
+    margin-left: 0 !important;
+  }
+  body.sidebar-open #app-sidebar {
+    transform: translateX(0);
+  }
+  body.sidebar-open .sidebar-overlay {
+    display: block;
+  }
+}
+
+@media (max-width: 768px) {
+  #app-content {
+    padding: var(--space-4);
+  }
+  #app-topbar {
+    padding: 0 var(--space-4);
+  }
+  .topbar-search-trigger {
+    display: none;
+  }
+}
