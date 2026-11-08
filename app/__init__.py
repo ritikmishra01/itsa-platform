@@ -38,6 +38,20 @@ def create_app(config_name=None):
     cors.init_app(app)
     limiter.init_app(app)
 
+    # Automatic safe column check for content_rating in feedback table
+    with app.app_context():
+        try:
+            from sqlalchemy import inspect, text
+            inspector = inspect(db.engine)
+            if 'feedback' in inspector.get_table_names():
+                cols = [c['name'] for c in inspector.get_columns('feedback')]
+                if 'content_rating' not in cols:
+                    with db.engine.connect() as conn:
+                        conn.execute(text("ALTER TABLE feedback ADD COLUMN content_rating SMALLINT DEFAULT 5;"))
+                        conn.commit()
+        except Exception:
+            pass
+
     # Flask-Login user loader
     @login_manager.user_loader
     def load_user(user_id):

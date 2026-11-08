@@ -45,6 +45,11 @@ def test_feedback_submission_and_points(client):
     client.post('/api/v1/auth/login', json={'email': 'test_coord@itsa.edu', 'password': 'Coord@12345'})
     client.post('/api/v1/attendance/scan', json={'event_id': event.id, 'ticket_code': ticket_code})
 
+    # Event is concluded and marked as completed
+    from app import db
+    event.status = 'COMPLETED'
+    db.session.commit()
+
     # 3. Student submits feedback
     client.post('/api/v1/auth/logout')
     client.post('/api/v1/auth/login', json={'email': 'test_student@itsa.edu', 'password': 'Student@12345'})

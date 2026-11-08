@@ -1,80 +1,184 @@
-﻿{% extends "base.html" %}
-{% block title %}QR Attendance Scanner - {{ event.title }}{% endblock %}
+{% extends "base.html" %}
+{% block title %}QR Attendance Scanner — {{ event.title }}{% endblock %}
 
 {% block extra_head %}
-<!-- HTML5-QRCode Scanner Library -->
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<!-- HTML5-QRCode Scanner Library (Local Vendor with CDN Fallback) -->
+<script src="{{ url_for('static', filename='vendor/js/html5-qrcode.min.js') }}"></script>
+<script>
+  if (typeof Html5Qrcode === 'undefined') {
+    document.write('<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"><\/script>');
+  }
+</script>
 {% endblock %}
 
+{% block context_panel %}{% endblock %}
+
 {% block content %}
-<div class="container py-2">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+<div class="container-fluid p-0">
+
+    {# ============ HEADER ============ #}
+    <div class="scanner-header mb-4">
         <div>
-            <span class="badge bg-warning text-dark fw-bold mb-1">Live Entry Gate</span>
-            <h3 class="fw-bold mb-0">{{ event.title }} - QR Check-in</h3>
+            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                <span class="scanner-badge">● Live Entry Gate</span>
+                <span class="scanner-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border-color: rgba(16, 185, 129, 0.3);">
+                    <i class="bi bi-people-fill me-1"></i> <span id="attendanceCount">{{ attendance_count if attendance_count is not none else (recent_attendances|length) }}</span> Checked In
+                </span>
+            </div>
+            <h1 class="scanner-title">{{ event.title }} — QR Check-in</h1>
+            <p class="scanner-subtitle">
+                Point the camera at a student's ticket QR or enter the ticket code manually.
+            </p>
         </div>
-        <a href="{{ url_for('pages.coordinator_dashboard') }}" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left me-1"></i> Back to Hub
-        </a>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('pages.coordinator_attendance', event_id=event.id) }}" class="scanner-btn scanner-btn-ghost scanner-btn-sm">
+                <i class="bi bi-list-check"></i> Roster
+            </a>
+            <a href="{{ url_for('pages.coordinator_dashboard') }}" class="scanner-back-btn">
+                <i class="bi bi-arrow-left"></i> Back to Hub
+            </a>
+        </div>
     </div>
 
-    <div class="row g-4">
-        <!-- Scanner Camera Column -->
-        <div class="col-lg-6">
-            <div class="card card-itsa p-4 text-center shadow-sm">
-                <h5 class="fw-bold mb-3"><i class="bi bi-camera text-primary me-2"></i> Scan Student QR Ticket</h5>
+    {# ============ MAIN GRID ============ #}
+    <div class="scanner-grid">
 
-                <div id="qr-reader" class="mx-auto mb-3" style="max-width: 420px; min-height: 280px;"></div>
+        {# --- LEFT: Camera --- #}
+        <div class="scanner-camera-col">
+            <div class="scanner-card">
 
-                <div class="d-flex justify-content-center gap-2 mb-3">
-                    <button id="btnStartScan" class="btn btn-sm btn-primary"><i class="bi bi-play-fill me-1"></i> Start Camera</button>
-                    <button id="btnStopScan" class="btn btn-sm btn-outline-secondary" disabled><i class="bi bi-stop-fill me-1"></i> Stop Camera</button>
+                <div class="scanner-card-head">
+                    <i class="bi bi-camera"></i>
+                    <div>
+                        <div class="scanner-card-title">Scan Student QR Ticket</div>
+                        <div class="scanner-card-sub">Align the QR code inside the camera viewfinder</div>
+                    </div>
                 </div>
 
-                <!-- Manual Fallback Input -->
-                <div class="border-top pt-3 text-start">
-                    <label class="form-label small fw-semibold text-muted">Manual Ticket Code Entry (Fallback)</label>
-                    <form id="manualScanForm" class="d-flex gap-2">
-                        <input type="text" id="manualCode" class="form-control font-monospace form-control-sm" placeholder="ITSA-TKT-..." required>
-                        <button type="submit" class="btn btn-sm btn-outline-primary">Check In</button>
+                {# --- Video container --- #}
+                <div class="scanner-viewport-wrap">
+                    <div id="qr-reader" class="qr-scanner-container"></div>
+
+                    <div class="scanner-overlay" id="scannerOverlay" aria-hidden="true">
+                        <div class="scanner-overlay-corner tl"></div>
+                        <div class="scanner-overlay-corner tr"></div>
+                        <div class="scanner-overlay-corner bl"></div>
+                        <div class="scanner-overlay-corner br"></div>
+                        <div class="scanner-overlay-line"></div>
+                    </div>
+
+                    <div class="scanner-idle" id="scannerIdle">
+                        <i class="bi bi-camera-video"></i>
+                        <div class="scanner-idle-title">Camera Off</div>
+                        <div class="scanner-idle-text">Click "Start Camera" to begin scanning</div>
+                    </div>
+                </div>
+
+                {# --- Camera selection & controls --- #}
+                <div class="d-flex align-items-center justify-content-center gap-2 mb-3 mt-3 flex-wrap" id="cameraControlsRow">
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="cameraSelect" class="small text-muted mb-0 fw-semibold">
+                            <i class="bi bi-camera-video me-1"></i>Camera:
+                        </label>
+                        <select id="cameraSelect" class="form-select form-select-sm" style="max-width: 220px; border-radius: 8px;">
+                            <option value="">Auto-detect Camera</option>
+                        </select>
+                    </div>
+                    <button id="btnSwitchCamera" class="scanner-btn scanner-btn-ghost scanner-btn-sm" type="button" title="Switch camera">
+                        <i class="bi bi-arrow-repeat"></i> Switch
+                    </button>
+                </div>
+
+                {# --- Buttons --- #}
+                <div class="scanner-controls mb-3">
+                    <button id="btnStartScan" class="scanner-btn scanner-btn-primary" type="button">
+                        <i class="bi bi-play-fill"></i> Start Camera
+                    </button>
+                    <button id="btnStopScan" class="scanner-btn scanner-btn-ghost" type="button" disabled>
+                        <i class="bi bi-stop-fill"></i> Stop Camera
+                    </button>
+                    <label for="qrFileInput" class="scanner-btn scanner-btn-ghost mb-0" style="cursor: pointer;" title="Scan a ticket image or screenshot">
+                        <i class="bi bi-file-earmark-image"></i> Scan Image
+                        <input type="file" id="qrFileInput" accept="image/*" style="display: none;">
+                    </label>
+                </div>
+
+                {# --- Manual fallback --- #}
+                <div class="scanner-manual">
+                    <label class="scanner-manual-label" for="manualCode">
+                        <i class="bi bi-keyboard"></i> Manual Ticket Code Entry
+                    </label>
+                    <form id="manualScanForm" class="scanner-manual-form" autocomplete="off">
+                        <input type="text"
+                                id="manualCode"
+                                class="scanner-manual-input"
+                                placeholder="ITSA-TKT-XXXXXXXX"
+                                autocomplete="off"
+                                spellcheck="false"
+                                required>
+                        <button type="submit" class="scanner-btn scanner-btn-primary scanner-btn-sm">
+                            <i class="bi bi-check-lg"></i> Check In
+                        </button>
                     </form>
                 </div>
+
             </div>
         </div>
 
-        <!-- Live Scan Feed & Statistics -->
-        <div class="col-lg-6">
-            <!-- Scan Status Alert Box -->
-            <div id="scanResultAlert" class="alert alert-light border p-4 mb-4 text-center shadow-sm rounded-3">
-                <i class="bi bi-qr-code text-muted fs-1 mb-2 d-block"></i>
-                <h6 class="fw-bold text-muted mb-1">Scanner Ready</h6>
-                <p class="small text-muted mb-0">Point the camera at student's ticket QR or enter code manually.</p>
+        {# --- RIGHT: Status + Check-ins --- #}
+        <div class="scanner-feed-col">
+
+            <div id="scanResultAlert" class="scanner-status-box" role="status" aria-live="polite">
+                <div class="scanner-status-icon">
+                    <i class="bi bi-qr-code"></i>
+                </div>
+                <div class="scanner-status-title">Scanner Ready</div>
+                <div class="scanner-status-text">
+                    Point camera at attendee's ticket QR, upload a ticket image, or enter ticket code manually.
+                </div>
             </div>
 
-            <!-- Recent Check-ins List -->
-            <div class="card card-itsa p-4 shadow-sm">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="fw-bold mb-0"><i class="bi bi-clock-history text-success me-2"></i> Recent Check-ins</h6>
-                    <a href="{{ url_for('pages.coordinator_attendance', event_id=event.id) }}" class="small text-primary text-decoration-none">Full Log &rarr;</a>
+            <div class="scanner-card">
+                <div class="scanner-card-head">
+                    <i class="bi bi-clock-history"></i>
+                    <div>
+                        <div class="scanner-card-title">Recent Check-ins</div>
+                        <div class="scanner-card-sub">Live attendance stream</div>
+                    </div>
+                    <a href="{{ url_for('pages.coordinator_attendance', event_id=event.id) }}"
+                       class="scanner-card-link">
+                        Full Log <i class="bi bi-arrow-right"></i>
+                    </a>
                 </div>
-                <div class="list-group list-group-flush" id="recentCheckinsList">
+
+                <div class="scanner-checkins-list" id="recentCheckinsList">
                     {% if recent_attendances %}
                         {% for att in recent_attendances %}
-                        <div class="list-group-item px-0 py-2 border-bottom d-flex justify-content-between align-items-center">
-                            <div>
-                                <span class="fw-bold">{{ att.student.full_name }}</span>
-                                <div class="small text-muted font-monospace">{{ att.student.student_profile.student_id if att.student.student_profile else '' }}</div>
+                        <div class="scanner-checkin-item">
+                            <div class="scanner-checkin-avatar"
+                                 style="background: linear-gradient(135deg, hsl({{ (att.student.id * 47) % 360 }}, 60%, 50%), hsl({{ (att.student.id * 47 + 30) % 360 }}, 60%, 40%));">
+                                {{ att.student.full_name[0] | upper }}
                             </div>
-                            <span class="badge bg-success">{{ att.scanned_at.strftime('%I:%M:%S %p') }}</span>
+                            <div class="scanner-checkin-body">
+                                <div class="scanner-checkin-name">{{ att.student.full_name }}</div>
+                                <div class="scanner-checkin-id">{{ att.student.student_profile.student_id if att.student.student_profile else '--' }}</div>
+                            </div>
+                            <div class="scanner-checkin-time">
+                                <i class="bi bi-clock"></i>
+                                {{ att.scanned_at.strftime('%I:%M %p') }}
+                            </div>
                         </div>
                         {% endfor %}
                     {% else %}
-                        <div class="text-center py-4 text-muted small" id="noCheckinsMsg">
-                            No attendees checked in yet for this session.
+                        <div class="scanner-checkin-empty" id="noCheckinsMsg">
+                            <i class="bi bi-inbox"></i>
+                            <div>No attendees checked in yet</div>
+                            <p>Check-ins will appear here in real time.</p>
                         </div>
                     {% endif %}
                 </div>
             </div>
+
         </div>
     </div>
 </div>
@@ -82,100 +186,540 @@
 
 {% block extra_scripts %}
 <script>
-let html5QrCode = null;
-const eventId = {{ event.id }};
-let isProcessing = false;
+(function () {
+  'use strict';
 
-async function processTicketCode(code) {
+  // ═══════════════════════════════════════════════════════════
+  // CONFIG
+  // ═══════════════════════════════════════════════════════════
+  const EVENT_ID = {{ event.id }};
+  const SCAN_COOLDOWN_MS = 2500;
+
+  // ═══════════════════════════════════════════════════════════
+  // STATE
+  // ═══════════════════════════════════════════════════════════
+  let scanner = null;
+  let isScanning = false;
+  let isProcessing = false;
+  let audioContext = null;
+  let availableCameras = [];
+  let currentCameraIndex = 0;
+  let lastScannedCode = null;
+  let lastScannedTime = 0;
+  let statusResetTimer = null;
+
+  // ═══════════════════════════════════════════════════════════
+  // DOM REFS
+  // ═══════════════════════════════════════════════════════════
+  const btnStart       = document.getElementById('btnStartScan');
+  const btnStop        = document.getElementById('btnStopScan');
+  const btnSwitchCam   = document.getElementById('btnSwitchCamera');
+  const cameraSelect   = document.getElementById('cameraSelect');
+  const qrFileInput    = document.getElementById('qrFileInput');
+  const overlay        = document.getElementById('scannerOverlay');
+  const idleState      = document.getElementById('scannerIdle');
+  const alertBox       = document.getElementById('scanResultAlert');
+  const checkinsList   = document.getElementById('recentCheckinsList');
+  const noCheckinsMsg  = document.getElementById('noCheckinsMsg');
+  const manualForm     = document.getElementById('manualScanForm');
+  const manualInput    = document.getElementById('manualCode');
+
+  // ═══════════════════════════════════════════════════════════
+  // AUDIO
+  // ═══════════════════════════════════════════════════════════
+  function ensureAudioContext() {
+    if (!audioContext) {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) audioContext = new AudioCtx();
+      } catch (e) {
+        audioContext = null;
+      }
+    }
+    return audioContext;
+  }
+
+  function playBeep(frequency, duration) {
+    const ctx = ensureAudioContext();
+    if (!ctx) return;
+    try {
+      if (ctx.state === 'suspended') ctx.resume();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = frequency;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration / 1000);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + duration / 1000);
+    } catch (e) {}
+  }
+
+  function playSuccessBeep() { playBeep(1200, 160); }
+  function playErrorBeep()   { playBeep(320, 280); }
+
+  // ═══════════════════════════════════════════════════════════
+  // HELPERS
+  // ═══════════════════════════════════════════════════════════
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // STATUS BOX CONTROLLER (Supports all 7 lifecycle states)
+  // ═══════════════════════════════════════════════════════════
+  function setStatus(state, data) {
+    if (statusResetTimer) {
+      clearTimeout(statusResetTimer);
+      statusResetTimer = null;
+    }
+
+    data = data || {};
+    alertBox.className = 'scanner-status-box';
+
+    if (state === 'ready') {
+      alertBox.innerHTML = `
+        <div class="scanner-status-icon"><i class="bi bi-qr-code"></i></div>
+        <div class="scanner-status-title">Scanner Ready</div>
+        <div class="scanner-status-text">Point camera at attendee's ticket QR, upload a ticket image, or enter ticket code below.</div>
+      `;
+    } else if (state === 'initializing') {
+      alertBox.classList.add('scanner-status-box-info');
+      alertBox.innerHTML = `
+        <div class="scanner-status-icon" style="color:#2563eb;"><div class="spinner-border text-primary" role="status" style="width:2.2rem;height:2.2rem;"></div></div>
+        <div class="scanner-status-title" style="color:#1d4ed8;">Initializing Camera…</div>
+        <div class="scanner-status-text">Starting video feed and calibrating barcode reader…</div>
+      `;
+    } else if (state === 'permission_required') {
+      alertBox.classList.add('scanner-status-box-warning');
+      alertBox.innerHTML = `
+        <div class="scanner-status-icon" style="color:#d97706;"><i class="bi bi-exclamation-triangle-fill"></i></div>
+        <div class="scanner-status-title" style="color:#b45309;">Camera Permission Required</div>
+        <div class="scanner-status-text">${escapeHtml(data.message || 'Please grant camera access in your browser address bar to scan tickets, or use manual ticket entry below.')}</div>
+      `;
+    } else if (state === 'detected') {
+      alertBox.classList.add('scanner-status-box-warning');
+      alertBox.innerHTML = `
+        <div class="scanner-status-icon" style="color:#d97706;"><i class="bi bi-qr-code-scan"></i></div>
+        <div class="scanner-status-title" style="color:#b45309;">QR Code Detected</div>
+        <div class="scanner-status-text">Reading code: <strong>${escapeHtml(data.code || '')}</strong>…</div>
+      `;
+    } else if (state === 'processing') {
+      alertBox.classList.add('scanner-status-box-info');
+      alertBox.innerHTML = `
+        <div class="scanner-status-icon" style="color:#2563eb;"><div class="spinner-border text-primary" role="status" style="width:2.2rem;height:2.2rem;"></div></div>
+        <div class="scanner-status-title" style="color:#1d4ed8;">Validating Ticket…</div>
+        <div class="scanner-status-text">Verifying ticket authenticity and event registration in database…</div>
+      `;
+    } else if (state === 'success') {
+      alertBox.classList.add('scanner-status-box-success');
+      alertBox.innerHTML = `
+        <div class="scanner-status-icon" style="color:#10b981;"><i class="bi bi-check-circle-fill"></i></div>
+        <div class="scanner-status-title" style="color:#047857;">Attendance Marked Successfully!</div>
+        <div class="scanner-status-student">${escapeHtml(data.student_name)}</div>
+        <div class="scanner-status-text">ID: ${escapeHtml(data.student_id || '--')}${data.department ? ' · ' + escapeHtml(data.department) : ''}</div>
+        <div class="scanner-status-badge">+10 ITSA Points Awarded</div>
+      `;
+      // Auto reset to ready state after 3 seconds for continuous scanning
+      statusResetTimer = setTimeout(() => {
+        if (!isProcessing) setStatus('ready');
+      }, 3000);
+    } else if (state === 'error') {
+      alertBox.classList.add('scanner-status-box-error');
+      const msg = data.message || 'Invalid ticket or check-in failed.';
+      const lower = msg.toLowerCase();
+      let title = 'Invalid Ticket';
+
+      if (lower.includes('already checked in')) {
+        title = 'Already Checked In';
+      } else if (lower.includes('mismatch') || lower.includes('different event')) {
+        title = 'Event Mismatch';
+      } else if (lower.includes('cancelled') || lower.includes('waitlist')) {
+        title = 'Invalid Registration';
+      } else if (lower.includes('not found')) {
+        title = 'Ticket Not Found';
+      } else if (lower.includes('unauthorized')) {
+        title = 'Unauthorized Coordinator';
+      } else if (lower.includes('not active') || lower.includes('cancelled')) {
+        title = 'Event Inactive';
+      }
+
+      alertBox.innerHTML = `
+        <div class="scanner-status-icon" style="color:#ef4444;"><i class="bi bi-x-circle-fill"></i></div>
+        <div class="scanner-status-title" style="color:#b91c1c;">${escapeHtml(title)}</div>
+        <div class="scanner-status-text">${escapeHtml(msg)}</div>
+      `;
+      // Auto reset to ready state after 3.5 seconds
+      statusResetTimer = setTimeout(() => {
+        if (!isProcessing) setStatus('ready');
+      }, 3500);
+    }
+  }
+
+  function prependCheckin(data) {
+    if (noCheckinsMsg) noCheckinsMsg.remove();
+    const initials = (data.student_name || 'U').charAt(0).toUpperCase();
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const el = document.createElement('div');
+    el.className = 'scanner-checkin-item scanner-checkin-new';
+    el.innerHTML = `
+      <div class="scanner-checkin-avatar" style="background: linear-gradient(135deg, #10b981, #059669);">${escapeHtml(initials)}</div>
+      <div class="scanner-checkin-body">
+        <div class="scanner-checkin-name">${escapeHtml(data.student_name)}</div>
+        <div class="scanner-checkin-id">${escapeHtml(data.student_id || '--')}</div>
+      </div>
+      <div class="scanner-checkin-time"><i class="bi bi-clock"></i> ${escapeHtml(time)}</div>
+    `;
+    checkinsList.prepend(el);
+
+    // Live attendance counter update
+    const countEl = document.getElementById('attendanceCount');
+    if (countEl) {
+      if (typeof data.total_attendances === 'number') {
+        countEl.textContent = data.total_attendances;
+      } else {
+        const cur = parseInt(countEl.textContent, 10) || 0;
+        countEl.textContent = cur + 1;
+      }
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // PROCESS TICKET
+  // ═══════════════════════════════════════════════════════════
+  async function processTicketCode(code) {
     if (isProcessing) return;
+    if (!code || typeof code !== 'string') return;
+    code = code.trim();
+    if (!code) return;
+
+    const now = Date.now();
+    if (code.toUpperCase() === (lastScannedCode || '').toUpperCase() && (now - lastScannedTime) < 3500) {
+      return; // Debounce rapid consecutive reads of the same QR
+    }
+
     isProcessing = true;
+    lastScannedCode = code;
+    lastScannedTime = now;
 
-    const alertBox = document.getElementById('scanResultAlert');
-    alertBox.className = 'alert alert-info border p-4 mb-4 text-center shadow-sm rounded-3';
-    alertBox.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Validating ticket with backend...';
+    const manualBtn = manualForm ? manualForm.querySelector('button[type="submit"]') : null;
+    if (manualBtn) manualBtn.disabled = true;
+    setStatus('processing');
 
     try {
-        const res = await apiCall('/api/v1/attendance/scan', 'POST', {
-            ticket_code: code,
-            event_id: eventId
-        });
-
-        alertBox.className = 'alert alert-success border-success p-4 mb-4 text-center shadow-sm rounded-3';
-        alertBox.innerHTML = `
-            <i class="bi bi-check-circle-fill text-success fs-1 mb-2 d-block"></i>
-            <h5 class="fw-bold text-success mb-1">Check-in Verified!</h5>
-            <div class="fw-bold text-dark fs-5">${res.data.student_name}</div>
-            <div class="small text-muted">ID: ${res.data.student_id || ''} &bull; ${res.data.department || ''}</div>
-            <div class="badge bg-warning text-dark mt-2">+10 ITSA Points Awarded & Cert Generated</div>
-        `;
-
-        // Prepend to recent check-ins
-        const list = document.getElementById('recentCheckinsList');
-        const noMsg = document.getElementById('noCheckinsMsg');
-        if (noMsg) noMsg.remove();
-
-        const newItem = document.createElement('div');
-        newItem.className = 'list-group-item px-0 py-2 border-bottom d-flex justify-content-between align-items-center bg-light';
-        newItem.innerHTML = `
-            <div>
-                <span class="fw-bold text-success">${res.data.student_name}</span>
-                <div class="small text-muted font-monospace">${res.data.student_id || ''}</div>
-            </div>
-            <span class="badge bg-success">${new Date().toLocaleTimeString()}</span>
-        `;
-        list.prepend(newItem);
-
+      const res = await apiCall('/api/v1/attendance/scan', 'POST', {
+        ticket_code: code,
+        event_id: EVENT_ID
+      });
+      playSuccessBeep();
+      setStatus('success', res.data || {});
+      prependCheckin(res.data || {});
     } catch (err) {
-        alertBox.className = 'alert alert-danger border-danger p-4 mb-4 text-center shadow-sm rounded-3';
-        alertBox.innerHTML = `
-            <i class="bi bi-x-circle-fill text-danger fs-1 mb-2 d-block"></i>
-            <h5 class="fw-bold text-danger mb-1">Attendance Rejected</h5>
-            <div class="text-dark small">${err.message}</div>
-        `;
+      playErrorBeep();
+      const errMsg = (err && err.message) ? err.message : 'Invalid ticket or check-in failed.';
+      setStatus('error', { message: errMsg });
     } finally {
-        setTimeout(() => { isProcessing = false; }, 2000);
+      if (manualBtn) manualBtn.disabled = false;
+      setTimeout(() => { isProcessing = false; }, SCAN_COOLDOWN_MS);
     }
-}
+  }
 
-document.getElementById('btnStartScan').addEventListener('click', async function() {
-    this.disabled = true;
-    document.getElementById('btnStopScan').disabled = false;
-
-    if (!html5QrCode) {
-        html5QrCode = new Html5Qrcode("qr-reader");
+  // ═══════════════════════════════════════════════════════════
+  // CAMERA CONFIGURATION
+  // ═══════════════════════════════════════════════════════════
+  // Full-frame scanning without restrictive qrbox crop ensures tickets are detected anywhere in the viewport.
+  // We disable useBarCodeDetectorIfSupported because Chromium native implementation can have silent drops on Windows.
+  const SCAN_CONFIG = {
+    fps: 15,
+    disableFlip: false,
+    experimentalFeatures: {
+      useBarCodeDetectorIfSupported: false
     }
+  };
+
+  async function refreshCameraList() {
+    if (typeof Html5Qrcode === 'undefined') return [];
+    try {
+      const devices = await Html5Qrcode.getCameras();
+      availableCameras = devices || [];
+      cameraSelect.innerHTML = '';
+
+      if (availableCameras.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = 'Auto-detect Camera';
+        cameraSelect.appendChild(opt);
+      } else {
+        availableCameras.forEach((cam, idx) => {
+          const opt = document.createElement('option');
+          opt.value = cam.id;
+          opt.textContent = cam.label || `Camera ${idx + 1}`;
+          cameraSelect.appendChild(opt);
+        });
+      }
+      return availableCameras;
+    } catch (err) {
+      console.warn('Could not enumerate cameras:', err);
+      return [];
+    }
+  }
+
+  function getTargetCameraConfig() {
+    const selectedId = cameraSelect.value;
+    if (selectedId) {
+      return { deviceId: { exact: selectedId } };
+    }
+    if (availableCameras.length > 0) {
+      const backCam = availableCameras.find(c => /back|rear|environment/i.test(c.label));
+      if (backCam) {
+        cameraSelect.value = backCam.id;
+        return { deviceId: { exact: backCam.id } };
+      }
+      cameraSelect.value = availableCameras[0].id;
+      return { deviceId: { exact: availableCameras[0].id } };
+    }
+    return { facingMode: "environment" };
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // START / STOP SCANNER
+  // ═══════════════════════════════════════════════════════════
+  async function startScanner() {
+    if (isScanning) return;
+
+    if (typeof Html5Qrcode === 'undefined') {
+      const errMsg = 'QR scanner library could not be loaded. Please check your network connection or enter ticket code manually.';
+      setStatus('error', { message: errMsg });
+      return;
+    }
+
+    btnStart.disabled = true;
+    btnStop.disabled = false;
+    setStatus('initializing');
+    ensureAudioContext();
+
+    // Query cameras if list is empty
+    if (availableCameras.length === 0) {
+      try {
+        await refreshCameraList();
+      } catch (e) {}
+    }
+
+    const primaryTarget = getTargetCameraConfig();
+    const fallbackConfigs = [
+      primaryTarget,
+      { facingMode: "environment" },
+      { facingMode: "user" },
+      {}
+    ];
+
+    let lastError = null;
+    for (const cameraConfig of fallbackConfigs) {
+      try {
+        if (scanner) {
+          try { await scanner.clear(); } catch (e) {}
+          scanner = null;
+        }
+
+        scanner = new Html5Qrcode("qr-reader", { verbose: false });
+        await scanner.start(
+          cameraConfig,
+          SCAN_CONFIG,
+          (decodedText) => {
+            setStatus('detected', { code: decodedText });
+            processTicketCode(decodedText);
+          },
+          () => {} // Frame error callback (suppressed to avoid log spam)
+        );
+
+        isScanning = true;
+        if (overlay)   overlay.classList.add('active');
+        if (idleState) idleState.style.display = 'none';
+        setStatus('ready');
+
+        // Re-enumerate cameras after permission has been granted so real device labels show up
+        if (availableCameras.length === 0 || !availableCameras[0].label) {
+          refreshCameraList();
+        }
+        return;
+      } catch (err) {
+        lastError = err;
+        console.warn('Camera attempt failed with config:', cameraConfig, err);
+        if (scanner) {
+          try { await scanner.clear(); } catch (e) {}
+          scanner = null;
+        }
+      }
+    }
+
+    // All configurations failed
+    btnStart.disabled = false;
+    btnStop.disabled = true;
+    isScanning = false;
+    scanner = null;
+    if (overlay)   overlay.classList.remove('active');
+    if (idleState) idleState.style.display = '';
+
+    const errStr = (lastError ? (lastError.message || String(lastError)) : '').toLowerCase();
+    if (lastError && (lastError.name === 'NotAllowedError' || errStr.includes('permission'))) {
+      setStatus('permission_required', { message: 'Camera permission was denied. Please allow camera access in your browser address bar.' });
+    } else if (lastError && (lastError.name === 'NotFoundError' || errStr.includes('not found') || errStr.includes('devicesnotfound'))) {
+      setStatus('error', { message: 'No camera found on this device. You can enter the ticket code manually below or upload a ticket image.' });
+    } else if (lastError && (lastError.name === 'NotReadableError' || errStr.includes('in use'))) {
+      setStatus('error', { message: 'Camera is currently in use by another application or browser tab.' });
+    } else {
+      setStatus('error', { message: (lastError && lastError.message) ? lastError.message : 'Could not initialize camera feed.' });
+    }
+  }
+
+  async function stopScanner() {
+    if (statusResetTimer) {
+      clearTimeout(statusResetTimer);
+      statusResetTimer = null;
+    }
+
+    // Hardware tracks release
+    try {
+      const video = document.querySelector('#qr-reader video');
+      if (video && video.srcObject) {
+        const stream = video.srcObject;
+        if (stream.getTracks) {
+          stream.getTracks().forEach(t => { try { t.stop(); } catch (e) {} });
+        }
+        video.srcObject = null;
+      }
+    } catch (e) {}
+
+    if (scanner && isScanning) {
+      try {
+        await scanner.stop();
+        await scanner.clear();
+      } catch (e) {
+        console.warn('Scanner stop warning:', e);
+      }
+    }
+
+    scanner = null;
+    isScanning = false;
+    btnStart.disabled = false;
+    btnStop.disabled = true;
+    if (overlay)   overlay.classList.remove('active');
+    if (idleState) idleState.style.display = '';
+    setStatus('ready');
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // FILE SCAN FALLBACK
+  // ═══════════════════════════════════════════════════════════
+  async function scanUploadedFile(file) {
+    if (!file) return;
+    if (typeof Html5Qrcode === 'undefined') {
+      setStatus('error', { message: 'QR scanner library is not loaded.' });
+      return;
+    }
+
+    if (isScanning) {
+      await stopScanner();
+    }
+
+    setStatus('processing');
+    ensureAudioContext();
 
     try {
-        await html5QrCode.start(
-            { facingMode: "environment" },
-            { fps: 10, qrbox: { width: 250, height: 250 } },
-            (decodedText) => {
-                processTicketCode(decodedText);
-            },
-            (err) => {}
-        );
-    } catch(e) {
-        showToast("Camera permission denied or camera not accessible.", "danger");
-        this.disabled = false;
-        document.getElementById('btnStopScan').disabled = true;
+      let fileScanner = scanner;
+      if (!fileScanner) {
+        fileScanner = new Html5Qrcode("qr-reader", { verbose: false });
+      }
+      const decodedText = await fileScanner.scanFile(file, false);
+      if (decodedText) {
+        setStatus('detected', { code: decodedText });
+        await processTicketCode(decodedText);
+      } else {
+        setStatus('error', { message: 'No QR code could be detected in the uploaded image.' });
+      }
+    } catch (err) {
+      console.error('File scan failed:', err);
+      setStatus('error', { message: 'Could not read QR code from file. Please ensure the QR is clear and well-lit.' });
+    } finally {
+      if (qrFileInput) qrFileInput.value = '';
     }
-});
+  }
 
-document.getElementById('btnStopScan').addEventListener('click', async function() {
-    if (html5QrCode) {
-        await html5QrCode.stop();
+  // ═══════════════════════════════════════════════════════════
+  // EVENT LISTENERS & WIRING
+  // ═══════════════════════════════════════════════════════════
+  btnStart.addEventListener('click', startScanner);
+  btnStop.addEventListener('click', stopScanner);
+
+  cameraSelect.addEventListener('change', async function () {
+    if (isScanning) {
+      await stopScanner();
+      await startScanner();
     }
-    this.disabled = true;
-    document.getElementById('btnStartScan').disabled = false;
-});
+  });
 
-document.getElementById('manualScanForm').addEventListener('submit', function(e) {
+  btnSwitchCam.addEventListener('click', async function () {
+    if (availableCameras.length <= 1) {
+      await refreshCameraList();
+    }
+    if (availableCameras.length > 1) {
+      currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
+      cameraSelect.value = availableCameras[currentCameraIndex].id;
+      if (isScanning) {
+        await stopScanner();
+        await startScanner();
+      }
+    }
+  });
+
+  qrFileInput.addEventListener('change', function (e) {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      scanUploadedFile(file);
+    }
+  });
+
+  manualForm.addEventListener('submit', function (e) {
     e.preventDefault();
-    const code = document.getElementById('manualCode').value.trim();
+    const code = manualInput.value.trim();
     if (code) {
-        processTicketCode(code);
-        document.getElementById('manualCode').value = '';
+      processTicketCode(code);
+      manualInput.value = '';
     }
-});
+  });
+
+  // Hotkey 'S' focuses manual input
+  document.addEventListener('keydown', function (e) {
+    if ((e.key === 's' || e.key === 'S') && document.activeElement !== manualInput &&
+        !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+      e.preventDefault();
+      manualInput.focus();
+    }
+  });
+
+  // Resource cleanup on navigation / tab switches
+  window.addEventListener('beforeunload', stopScanner);
+  window.addEventListener('pagehide', stopScanner);
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden && isScanning) {
+      stopScanner();
+    }
+  });
+
+  // Attempt to enumerate cameras on page load if permission was previously granted
+  if (typeof Html5Qrcode !== 'undefined') {
+    refreshCameraList().catch(() => {});
+  }
+
+})();
 </script>
 {% endblock %}

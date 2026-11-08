@@ -1,0 +1,49 @@
+{# Quick Actions — role-aware #}
+<section class="context-panel-section">
+  <h3 class="context-panel-title">⚡ Quick Actions</h3>
+  <div class="context-panel-card d-grid gap-2">
+
+    {% if current_user.role == 'ADMIN' %}
+      <a href="{{ url_for('pages.admin_dashboard') }}" class="btn btn-brand btn-sm">
+        <i class="bi bi-speedometer2 me-1"></i> Admin Dashboard
+      </a>
+      <a href="{{ url_for('pages.admin_analytics') }}" class="btn btn-brand-outline btn-sm">
+        <i class="bi bi-bar-chart me-1"></i> Analytics
+      </a>
+    {% elif current_user.role == 'COORDINATOR' %}
+      <a href="{{ url_for('pages.coordinator_dashboard') }}" class="btn btn-brand btn-sm">
+        <i class="bi bi-speedometer2 me-1"></i> Coordinator Home
+      </a>
+      <a href="{{ url_for('pages.my_events') }}" class="btn btn-brand-outline btn-sm">
+        <i class="bi bi-calendar-event me-1"></i> My Events
+      </a>
+    {% else %}
+      <a href="{{ url_for('pages.events_page') }}" class="btn btn-brand btn-sm">
+        <i class="bi bi-calendar-plus me-1"></i> Browse Events
+      </a>
+      <a href="{{ url_for('pages.leaderboard_page') }}" class="btn btn-brand-outline btn-sm">
+        <i class="bi bi-trophy me-1"></i> Leaderboard
+      </a>
+    {% endif %}
+
+  </div>
+</section>
+
+{# Trending #}
+<section class="context-panel-section">
+  <h3 class="context-panel-title">
+    🔥 Trending
+    <a href="{{ url_for('pages.events_page') }}">See all</a>
+  </h3>
+  <div class="context-panel-card">
+    <p class="text-muted small mb-0">Trending events will appear here.</p>
+  </div>
+</section>
+
+{# Your Stats #}
+<section class="context-panel-section">
+  <h3 class="context-panel-title">📊 Your Stats</h3>
+  <div class="context-panel-card">
+    <p class="text-muted small mb-0">Your stats will appear here.</p>
+  </div>
+</section>

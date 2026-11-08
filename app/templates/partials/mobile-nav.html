@@ -1,0 +1,86 @@
+<div class="mobile-nav-header">
+  <strong>Menu</strong>
+  <button class="cmd-icon-btn" id="mobile-menu-close" aria-label="Close menu" type="button">
+    <i class="bi bi-x-lg"></i>
+  </button>
+</div>
+
+<nav class="mobile-nav-body">
+
+  {# ---- ADMIN ---- #}
+  {% if current_user.role == 'ADMIN' %}
+    <a href="{{ url_for('pages.admin_dashboard') }}" class="mobile-nav-item {% if request.endpoint == 'pages.admin_dashboard' %}active{% endif %}">
+      <i class="bi bi-speedometer2"></i> Dashboard
+    </a>
+    <a href="{{ url_for('pages.admin_events') }}" class="mobile-nav-item {% if request.endpoint == 'pages.admin_events' %}active{% endif %}">
+      <i class="bi bi-calendar-event"></i> Events
+    </a>
+    <a href="{{ url_for('pages.admin_users') }}" class="mobile-nav-item {% if request.endpoint == 'pages.admin_users' %}active{% endif %}">
+      <i class="bi bi-people"></i> Users
+    </a>
+    <a href="{{ url_for('pages.admin_analytics') }}" class="mobile-nav-item {% if request.endpoint == 'pages.admin_analytics' %}active{% endif %}">
+      <i class="bi bi-bar-chart"></i> Analytics
+    </a>
+    <a href="{{ url_for('pages.admin_reports') }}" class="mobile-nav-item {% if request.endpoint == 'pages.admin_reports' %}active{% endif %}">
+      <i class="bi bi-flag"></i> Reports
+    </a>
+    <a href="{{ url_for('pages.admin_settings') }}" class="mobile-nav-item {% if request.endpoint == 'pages.admin_settings' %}active{% endif %}">
+      <i class="bi bi-gear"></i> Settings
+    </a>
+
+  {# ---- COORDINATOR ---- #}
+  {% elif current_user.role == 'COORDINATOR' %}
+    <a href="{{ url_for('pages.coordinator_dashboard') }}" class="mobile-nav-item {% if request.endpoint == 'pages.coordinator_dashboard' %}active{% endif %}">
+      <i class="bi bi-speedometer2"></i> Dashboard
+    </a>
+    <a href="{{ url_for('pages.my_events') }}" class="mobile-nav-item {% if request.endpoint == 'pages.my_events' %}active{% endif %}">
+      <i class="bi bi-calendar-event"></i> My Events
+    </a>
+    <a href="{{ url_for('pages.notifications_page') }}" class="mobile-nav-item {% if request.endpoint == 'pages.notifications_page' %}active{% endif %}">
+      <i class="bi bi-bell"></i> Notifications
+    </a>
+    <a href="{{ url_for('pages.profile_page') }}" class="mobile-nav-item {% if request.endpoint == 'pages.profile_page' %}active{% endif %}">
+      <i class="bi bi-person"></i> Profile
+    </a>
+
+  {# ---- STUDENT ---- #}
+  {% else %}
+    <a href="{{ url_for('pages.student_dashboard') }}" class="mobile-nav-item {% if request.endpoint == 'pages.student_dashboard' %}active{% endif %}">
+      <i class="bi bi-house"></i> Dashboard
+    </a>
+    <a href="{{ url_for('pages.events_page') }}" class="mobile-nav-item {% if request.endpoint == 'pages.events_page' %}active{% endif %}">
+      <i class="bi bi-calendar-event"></i> Events
+    </a>
+    <a href="{{ url_for('pages.social_feed') }}" class="mobile-nav-item {% if request.endpoint == 'pages.social_feed' %}active{% endif %}">
+      <i class="bi bi-people"></i> Community
+    </a>
+    <a href="{{ url_for('pages.leaderboard_page') }}" class="mobile-nav-item {% if request.endpoint == 'pages.leaderboard_page' %}active{% endif %}">
+      <i class="bi bi-trophy"></i> Leaderboard
+    </a>
+    <a href="{{ url_for('pages.my_events') }}" class="mobile-nav-item {% if request.endpoint == 'pages.my_events' %}active{% endif %}">
+      <i class="bi bi-calendar-check"></i> My Events
+    </a>
+    <a href="{{ url_for('pages.my_tickets') }}" class="mobile-nav-item {% if request.endpoint == 'pages.my_tickets' %}active{% endif %}">
+      <i class="bi bi-ticket-perforated"></i> My Tickets
+    </a>
+    <a href="{{ url_for('pages.my_certificates') }}" class="mobile-nav-item {% if request.endpoint == 'pages.my_certificates' %}active{% endif %}">
+      <i class="bi bi-award"></i> Certificates
+    </a>
+    <a href="{{ url_for('pages.chatbot_page') }}" class="mobile-nav-item {% if request.endpoint == 'pages.chatbot_page' %}active{% endif %}">
+      <i class="bi bi-robot"></i> AI Assistant
+    </a>
+    <a href="{{ url_for('pages.profile_page') }}" class="mobile-nav-item {% if request.endpoint == 'pages.profile_page' %}active{% endif %}">
+      <i class="bi bi-person"></i> Profile
+    </a>
+  {% endif %}
+
+  <hr class="my-3 opacity-25">
+
+  <button class="mobile-nav-item w-100 border-0 bg-transparent text-start" data-theme-toggle type="button">
+    <i class="bi bi-moon-stars"></i> Toggle Theme
+  </button>
+
+  <a href="{{ url_for('pages.logout') }}" class="mobile-nav-item" style="color: var(--danger-solid);">
+    <i class="bi bi-box-arrow-right"></i> Sign Out
+  </a>
+</nav>

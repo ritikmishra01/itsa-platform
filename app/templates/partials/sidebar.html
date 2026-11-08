@@ -121,6 +121,10 @@
     <i class="bi bi-award sidebar-icon"></i>
     <span class="sidebar-label">Certificate Center</span>
   </a>
+  <a href="{{ url_for('pages.admin_feedback') }}" class="sidebar-nav-item {% if active_page == 'feedback' %}active{% endif %}">
+    <i class="bi bi-star sidebar-icon"></i>
+    <span class="sidebar-label">Feedback Center</span>
+  </a>
 
   <div class="sidebar-section-header">Platform Engagement</div>
   <a href="{{ url_for('pages.admin_community') }}" class="sidebar-nav-item {% if active_page == 'community' or active_page == 'moderation' %}active{% endif %}">

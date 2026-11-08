@@ -74,3 +74,21 @@ def test_admin_export_csv_reports(auth_client_admin):
         assert 'text/csv' in res.content_type
         assert len(res.data) > 0
 
+
+def test_admin_live_feed_endpoint(auth_client_admin):
+    res = auth_client_admin.get('/api/v1/admin/live-feed')
+    assert res.status_code == 200
+    json_data = res.get_json()
+    assert json_data['success'] is True
+    assert 'metrics' in json_data['data']
+    assert 'total_students' in json_data['data']['metrics']
+    assert 'recent_activities' in json_data['data']
+    assert 'latest_users' in json_data['data']
+
+
+def test_student_cannot_access_live_feed(auth_client_student):
+    res_student = auth_client_student.get('/api/v1/admin/live-feed')
+    assert res_student.status_code == 403
+
+
+

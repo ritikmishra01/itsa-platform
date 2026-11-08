@@ -87,6 +87,38 @@
         </div>
     </div>
 
+    {% if pending_feedback_events %}
+    <div class="card-surface p-4 mb-4 border-warning border-opacity-50" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(251, 191, 36, 0.02) 100%);">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div class="d-flex align-items-center gap-2">
+                <div class="p-2 rounded-circle bg-warning bg-opacity-20 text-warning">
+                    <i class="bi bi-star-fill"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold mb-0" style="color: var(--text-primary);">Feedback Requested (Earn +5 Points)</h5>
+                    <p class="text-muted small mb-0">You attended these completed events. Share your feedback to help us improve!</p>
+                </div>
+            </div>
+            <span class="badge bg-warning text-dark fw-bold">{{ pending_feedback_events|length }} Pending</span>
+        </div>
+        <div class="row g-3">
+            {% for pev in pending_feedback_events %}
+            <div class="col-md-6">
+                <div class="p-3 rounded-3 border d-flex justify-content-between align-items-center bg-white shadow-sm">
+                    <div>
+                        <div class="fw-bold text-dark text-truncate" style="max-width: 260px;">{{ pev.title }}</div>
+                        <div class="small text-muted"><i class="bi bi-calendar-check me-1"></i> {{ pev.start_datetime.strftime('%b %d, %Y') }}</div>
+                    </div>
+                    <a href="{{ url_for('pages.event_detail', event_id=pev.id) }}#feedback-section" class="btn btn-sm btn-brand">
+                        <i class="bi bi-pencil-square me-1"></i> Give Feedback
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
     <div class="row g-4">
         <!-- Upcoming Registered Events -->
         <div class="col-lg-7">

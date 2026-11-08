@@ -1,100 +1,252 @@
 {% extends "base.html" %}
-{% block title %}Events Directory{% endblock %}
+{% block title %}Events Directory | ITSA Platform{% endblock %}
 
 {% block content %}
 <div class="container-fluid p-0">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+
+    <!-- Page Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 events-header">
         <div>
-            <h2 class="fw-bold mb-1" style="color: var(--text-primary);">{% if is_archive %}Past Events Archive{% else %}Events Directory{% endif %}</h2>
+            <h2 class="fw-bold mb-1" style="color: var(--text-primary);">Events</h2>
             <p class="text-muted small mb-0">Browse workshops, technical hackathons, coding contests, and guest lectures</p>
         </div>
-        <div class="d-flex gap-2">
-            {% if is_archive %}
-            <a href="{{ url_for('pages.events_page') }}" class="btn btn-brand btn-sm"><i class="bi bi-calendar-check me-1"></i> Upcoming Events</a>
-            {% else %}
-            <a href="{{ url_for('pages.events_page', archive='true') }}" class="btn btn-ghost btn-sm"><i class="bi bi-archive me-1"></i> Past Archive</a>
+        <div class="d-flex align-items-center gap-2">
+            <!-- View Toggle: Grid / List -->
+            <div class="btn-group" role="group" aria-label="View toggle">
+                <button type="button" class="btn btn-ghost btn-sm active" id="btnViewGrid" onclick="setViewMode('grid')" title="Grid View">
+                    <i class="bi bi-grid-fill"></i>
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm" id="btnViewList" onclick="setViewMode('list')" title="List View">
+                    <i class="bi bi-list-task"></i>
+                </button>
+            </div>
+
+            <!-- Create Event CTA (Visible only to Admin & Coordinator) -->
+            {% if current_user.is_authenticated and (current_user.is_admin or current_user.is_coordinator) %}
+            <a href="{% if current_user.is_admin %}{{ url_for('pages.admin_events') }}{% else %}{{ url_for('pages.coordinator_dashboard') }}{% endif %}" class="btn btn-brand btn-sm">
+                <i class="bi bi-plus-lg me-1"></i> Create Event
+            </a>
             {% endif %}
         </div>
     </div>
 
-    <!-- Filter Bar -->
-    <div class="card-surface p-3 mb-4">
-        <form method="GET" action="{{ url_for('pages.events_page') }}" class="row g-3 align-items-center">
-            {% if is_archive %}
-            <input type="hidden" name="archive" value="true">
-            {% endif %}
-            <div class="col-md-6">
-                <div class="input-group">
-                    <span class="input-group-text bg-transparent border-end-0" style="border-color: var(--border-subtle); color: var(--text-muted);"><i class="bi bi-search"></i></span>
-                    <input type="text" class="form-control-modern border-start-0" name="search" value="{{ search or '' }}" placeholder="Search events by title or keyword...">
-                </div>
+    <!-- Sticky Filter Bar Under Topbar -->
+    <div class="events-filter-bar mb-4">
+        <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+            
+            <!-- Left Tabs: All | Upcoming | Ongoing | Past | My Registrations -->
+            <div class="events-nav-tabs">
+                <a href="{{ url_for('pages.events_page', tab='all', category_id=current_cat, search=search, sort=sort_by) }}" 
+                   class="events-tab-btn {% if current_tab == 'all' %}active{% endif %}">
+                   All
+                </a>
+                <a href="{{ url_for('pages.events_page', tab='upcoming', category_id=current_cat, search=search, sort=sort_by) }}" 
+                   class="events-tab-btn {% if current_tab == 'upcoming' %}active{% endif %}">
+                   <i class="bi bi-calendar-check"></i> Upcoming
+                </a>
+                <a href="{{ url_for('pages.events_page', tab='ongoing', category_id=current_cat, search=search, sort=sort_by) }}" 
+                   class="events-tab-btn {% if current_tab == 'ongoing' %}active{% endif %}">
+                   <i class="bi bi-broadcast"></i> Ongoing
+                </a>
+                <a href="{{ url_for('pages.events_page', tab='past', category_id=current_cat, search=search, sort=sort_by) }}" 
+                   class="events-tab-btn {% if current_tab == 'past' %}active{% endif %}">
+                   <i class="bi bi-clock-history"></i> Past
+                </a>
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('pages.events_page', tab='my', category_id=current_cat, search=search, sort=sort_by) }}" 
+                   class="events-tab-btn {% if current_tab == 'my' %}active{% endif %}">
+                   <i class="bi bi-ticket-perforated"></i> My Registrations
+                </a>
+                {% endif %}
             </div>
-            <div class="col-md-4">
-                <select class="form-select-modern" name="category_id">
+
+            <!-- Right Controls: Search, Category, Sort -->
+            <form method="GET" action="{{ url_for('pages.events_page') }}" class="d-flex align-items-center flex-wrap gap-2 m-0">
+                <input type="hidden" name="tab" value="{{ current_tab }}">
+
+                <!-- Search Input in Filter Bar -->
+                <div class="input-group input-group-sm" style="width: 220px;">
+                    <span class="input-group-text bg-transparent border-end-0" style="border-color: var(--border-subtle); color: var(--text-muted);"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control border-start-0" name="search" value="{{ search or '' }}" placeholder="Search events..." style="border-radius: var(--radius-sm); font-size: 0.8125rem;">
+                </div>
+
+                <!-- Category Dropdown -->
+                <select class="form-select form-select-sm" name="category_id" onchange="this.form.submit()" style="width: 160px; border-radius: var(--radius-sm); font-size: 0.8125rem;">
                     <option value="">All Categories</option>
                     {% for cat in categories %}
                     <option value="{{ cat.id }}" {% if current_cat == cat.id|string %}selected{% endif %}>{{ cat.name }}</option>
                     {% endfor %}
                 </select>
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-brand w-100">Filter</button>
-            </div>
-        </form>
+
+                <!-- Sort Dropdown -->
+                <select class="form-select form-select-sm" name="sort" onchange="this.form.submit()" style="width: 140px; border-radius: var(--radius-sm); font-size: 0.8125rem;">
+                    <option value="date_asc" {% if sort_by == 'date_asc' %}selected{% endif %}>Earliest Date</option>
+                    <option value="date_desc" {% if sort_by == 'date_desc' %}selected{% endif %}>Latest Date</option>
+                    <option value="popular" {% if sort_by == 'popular' %}selected{% endif %}>Most Popular</option>
+                    <option value="title" {% if sort_by == 'title' %}selected{% endif %}>Title (A-Z)</option>
+                </select>
+            </form>
+        </div>
     </div>
 
-    <!-- Events Grid -->
-    <div class="row g-4">
+    <!-- Event Cards Grid / List -->
+    <div class="events-grid" id="eventsGrid">
         {% if events %}
             {% for event in events %}
-            <div class="col-md-6 col-lg-4">
-                <div class="card-event">
-                    <div class="card-event-cover">
-                        {% if event.poster_image %}
-                        <img src="{{ url_for('pages.serve_upload', filename=event.poster_image.replace('uploads/', '')) }}" alt="{{ event.title }}" loading="lazy">
-                        {% else %}
-                        <div class="w-100 h-100 d-flex align-items-center justify-content-center fs-1" style="color: var(--brand-400); background: var(--surface-subtle);">
-                            <i class="bi bi-calendar2-event"></i>
+            {% set is_registered = current_user.is_authenticated and (event.id in user_reg_event_ids) %}
+            {% set max_seats = event.max_participants or 100 %}
+            {% set curr_seats = event.current_registrations or 0 %}
+            {% set seats_left = [max_seats - curr_seats, 0]|max if event.max_participants else 'Unlimited' %}
+            {% set pct = [((curr_seats / max_seats) * 100)|round|int, 100]|min if event.max_participants else 30 %}
+            
+            <div class="event-card">
+                <!-- 16:9 Cover Image with Lazy Loading & Fallback -->
+                <div class="event-card-cover">
+                    {% if event.poster_image %}
+                    <img src="{{ url_for('pages.serve_upload', filename=event.poster_image.replace('uploads/', '')) }}" alt="{{ event.title }}" loading="lazy">
+                    {% else %}
+                    <div class="w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center p-3" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.18) 100%);">
+                        <i class="bi bi-calendar2-event-fill display-5" style="color: var(--brand-500);"></i>
+                        <span class="small fw-semibold mt-2 text-muted">{{ event.category.name if event.category else 'ITSA Event' }}</span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Category Chip Top-Left -->
+                    <span class="event-chip-category">
+                        {{ event.category.name if event.category else 'General' }}
+                    </span>
+
+                    <!-- Status Badge Top-Right -->
+                    <span class="event-badge-status {% if event.status == 'REGISTRATION_OPEN' %}open{% elif event.status == 'ONGOING' %}filling{% elif event.status in ['REGISTRATION_CLOSED', 'CANCELLED'] %}closed{% else %}completed{% endif %}">
+                        {% if event.status == 'REGISTRATION_OPEN' %}Open{% elif event.status == 'ONGOING' %}Ongoing{% elif event.status == 'REGISTRATION_CLOSED' %}Closed{% else %}{{ event.status }}{% endif %}
+                    </span>
+                </div>
+
+                <!-- Card Body (Equal Height via Flex Column) -->
+                <div class="event-card-body">
+                    <!-- Title (2-line clamp) -->
+                    <a href="{{ url_for('pages.event_detail', event_id=event.id) }}" class="event-card-title">
+                        {{ event.title }}
+                    </a>
+
+                    <!-- Description (2-line clamp) -->
+                    <p class="event-card-desc">
+                        {{ event.description or 'Participate in this engaging event organized by the Information Technology Students’ Association!' }}
+                    </p>
+
+                    <!-- Meta Rows with Icons -->
+                    <div class="event-meta-list">
+                        <div class="event-meta-item">
+                            <i class="bi bi-calendar3"></i>
+                            <span>{{ event.start_datetime.strftime('%a, %b %d, %Y • %I:%M %p') }}</span>
                         </div>
-                        {% endif %}
-                        <span class="card-event-category">
-                            {{ event.category.name if event.category else 'Event' }}
-                        </span>
+                        <div class="event-meta-item">
+                            <i class="bi bi-geo-alt"></i>
+                            <span>{{ event.venue.name if event.venue else 'Auditorium / Lab 304' }}</span>
+                        </div>
+                        <div class="event-meta-item">
+                            <i class="bi bi-people"></i>
+                            <span>{{ curr_seats }} registered {% if event.max_participants %}• {{ seats_left }} seats left{% endif %}</span>
+                        </div>
                     </div>
 
-                    <div class="card-event-body">
-                        <div class="text-muted small mb-1">
-                            <i class="bi bi-calendar3 me-1"></i> {{ event.start_datetime.strftime('%a, %b %d, %Y') }}
-                        </div>
-                        <h5 class="fw-bold mb-2 text-truncate" style="color: var(--text-primary);">{{ event.title }}</h5>
-                        <p class="text-muted small mb-3 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                            {{ event.description or 'Join us for this exciting departmental event!' }}
-                        </p>
-                        
-                        <div class="border-top pt-3 d-flex justify-content-between align-items-center" style="border-color: var(--border-subtle) !important;">
-                            <span class="small text-muted">
-                                <i class="bi bi-people me-1"></i> {{ event.current_registrations }} registered
-                            </span>
+                    <!-- Progress Bar: seats filled (green -> amber -> red) -->
+                    {% if event.max_participants %}
+                    <div class="event-seat-progress" title="{{ pct }}% capacity filled">
+                        <div class="event-seat-bar {% if pct < 70 %}green{% elif pct < 90 %}amber{% else %}red{% endif %}" style="width: {{ pct }}%;"></div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Card Footer: Context-Aware RSVP Button + Share Icon -->
+                    <div class="event-card-footer">
+                        <div>
+                            {% if is_registered %}
+                            <a href="{{ url_for('pages.my_tickets') }}" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-check-circle me-1"></i> Registered
+                            </a>
+                            {% elif event.status == 'REGISTRATION_OPEN' %}
                             <a href="{{ url_for('pages.event_detail', event_id=event.id) }}" class="btn btn-sm btn-brand">
+                                Register Now &rarr;
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('pages.event_detail', event_id=event.id) }}" class="btn btn-sm btn-ghost">
                                 View Details &rarr;
                             </a>
+                            {% endif %}
                         </div>
+
+                        <!-- Share Icon Button -->
+                        <button type="button" class="btn btn-ghost btn-sm p-1" onclick="navigator.clipboard.writeText(window.location.origin + '{{ url_for('pages.event_detail', event_id=event.id) }}'); if(window.ITSA && window.ITSA.toast){ITSA.toast.success('Link Copied', 'Event link copied to clipboard!');}" title="Share Event Link">
+                            <i class="bi bi-share"></i>
+                        </button>
                     </div>
                 </div>
             </div>
             {% endfor %}
         {% else %}
-            <div class="col-12">
-                <div class="empty-state">
-                    <div class="empty-state-icon">
+            <!-- Contextual Empty State Per Tab -->
+            <div class="col-12 py-5">
+                <div class="empty-state text-center p-5 card card-itsa shadow-sm" style="border-radius: var(--radius-xl);">
+                    <div class="mx-auto d-flex align-items-center justify-content-center mb-3" style="width: 72px; height: 72px; border-radius: 50%; background: var(--brand-50); color: var(--brand-500); font-size: 2rem;">
                         <i class="bi bi-calendar-x"></i>
                     </div>
-                    <div class="empty-state-title">No events found</div>
-                    <div class="empty-state-desc">There are no events matching your filter criteria. Check back soon for new announcements!</div>
-                    <a href="{{ url_for('pages.events_page') }}" class="btn btn-brand btn-sm">Clear Search Filter</a>
+                    <h4 class="fw-bold mb-1" style="color: var(--text-primary);">
+                        {% if current_tab == 'my' %}
+                        No Event Registrations Yet
+                        {% elif current_tab == 'past' %}
+                        No Past Events Archived
+                        {% elif current_tab == 'ongoing' %}
+                        No Events Currently Ongoing
+                        {% else %}
+                        No Upcoming Events Found
+                        {% endif %}
+                    </h4>
+                    <p class="text-muted small mx-auto mb-4" style="max-width: 460px;">
+                        {% if current_tab == 'my' %}
+                        You haven't registered for any events yet. Check out upcoming technical contests and workshops!
+                        {% elif search or current_cat %}
+                        No events match your current search keywords or category filters. Try clearing filters to see all events.
+                        {% else %}
+                        Stay tuned! New departmental technical and cultural activities will be published soon.
+                        {% endif %}
+                    </p>
+                    <div>
+                        <a href="{{ url_for('pages.events_page') }}" class="btn btn-brand btn-sm">
+                            <i class="bi bi-calendar-event me-1"></i> Browse All Events
+                        </a>
+                    </div>
                 </div>
             </div>
         {% endif %}
     </div>
 </div>
+
+<script>
+    function setViewMode(mode) {
+        const grid = document.getElementById('eventsGrid');
+        const btnGrid = document.getElementById('btnViewGrid');
+        const btnList = document.getElementById('btnViewList');
+        if (!grid) return;
+
+        if (mode === 'list') {
+            grid.classList.add('list-view');
+            btnList.classList.add('active');
+            btnGrid.classList.remove('active');
+            localStorage.setItem('itsa-events-view', 'list');
+        } else {
+            grid.classList.remove('list-view');
+            btnGrid.classList.add('active');
+            btnList.classList.remove('active');
+            localStorage.setItem('itsa-events-view', 'grid');
+        }
+    }
+
+    // Restore user view preference
+    document.addEventListener('DOMContentLoaded', function () {
+        const savedView = localStorage.getItem('itsa-events-view');
+        if (savedView === 'list') {
+            setViewMode('list');
+        }
+    });
+</script>
 {% endblock %}

@@ -1,128 +1,254 @@
 /* ==========================================================================
-   ITSA PLATFORM — LEGACY COMPATIBILITY & THEME SYSTEM
-   Seamlessly integrates with design-system.css & Bootstrap 5.3
+   ITSA PLATFORM — HIGH-LEVEL LEGACY COMPATIBILITY & THEME SYSTEM
+   Seamless bridge between design-system tokens & legacy components
    ========================================================================== */
 
+/* ==========================================================================
+   1. LEGACY TOKEN BRIDGE — Mapped to design system
+   ========================================================================== */
 :root {
-  --itsa-primary: var(--brand-500, #6366f1);
-  --itsa-primary-dark: var(--brand-600, #4f46e5);
-  --itsa-gold: #fbbc04;
-  --itsa-gold-dark: #e37400;
-  --itsa-success: #10b981;
-  --itsa-danger: #ef4444;
-  --itsa-dark: var(--text-primary, #0f172a);
-  --itsa-muted: var(--text-muted, #64748b);
-  --itsa-light-bg: var(--surface-canvas, #f8fafc);
-  --itsa-card-bg: var(--surface-card, #ffffff);
-  --itsa-border: var(--border-subtle, #e2e8f0);
+  --itsa-primary: var(--brand-500);
+  --itsa-primary-dark: var(--brand-600);
+  --itsa-primary-soft: var(--brand-50);
+  --itsa-gold: #fbbf24;
+  --itsa-gold-dark: #f59e0b;
+  --itsa-gold-gradient: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  --itsa-success: var(--success-solid);
+  --itsa-danger: var(--danger-solid);
+  --itsa-dark: var(--text-primary);
+  --itsa-muted: var(--text-muted);
+  --itsa-light-bg: var(--surface-canvas);
+  --itsa-card-bg: var(--surface-card);
+  --itsa-border: var(--border-subtle);
+
+  /* Semantic aliases */
+  --itsa-glass: var(--surface-glass);
+  --itsa-glass-strong: var(--surface-glass-strong);
+  --itsa-overlay: var(--surface-overlay);
+  --itsa-glow: var(--shadow-glow);
+  --itsa-glow-sm: var(--shadow-glow-sm);
 }
 
 [data-bs-theme="dark"] {
-  --itsa-primary: var(--brand-400, #818cf8);
-  --itsa-primary-dark: var(--brand-500, #6366f1);
-  --itsa-dark: var(--text-primary, #f8fafc);
-  --itsa-muted: var(--text-secondary, #94a3b8);
-  --itsa-light-bg: var(--surface-canvas, #090d16);
-  --itsa-card-bg: var(--surface-card, #111827);
-  --itsa-border: var(--border-subtle, #1e293b);
+  --itsa-primary: var(--brand-400);
+  --itsa-primary-dark: var(--brand-500);
+  --itsa-dark: var(--text-primary);
+  --itsa-muted: var(--text-secondary);
+  --itsa-light-bg: var(--surface-canvas);
+  --itsa-card-bg: var(--surface-card);
+  --itsa-border: var(--border-subtle);
 }
 
+/* ==========================================================================
+   2. BASE BODY
+   ========================================================================== */
 body {
-  font-family: var(--font-sans, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-family: var(--font-sans);
   background-color: var(--surface-canvas);
   color: var(--text-primary);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 main {
   flex: 1;
 }
 
-/* Custom Navbar */
+/* ==========================================================================
+   3. NAVBAR — Frosted glass with premium depth
+   ========================================================================== */
 .navbar-itsa {
-  background-color: var(--surface-card);
+  background: color-mix(in srgb, var(--surface-card) 88%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-xs);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.03),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
 }
+
 .navbar-brand {
-  font-weight: 700;
+  font-weight: 800;
   color: var(--brand-500) !important;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.03em;
+  font-size: 1.15rem;
+  transition: color var(--dur-fast);
 }
+.navbar-brand:hover {
+  color: var(--brand-600) !important;
+}
+
 .nav-link {
   font-weight: 500;
   color: var(--text-secondary) !important;
-  transition: color 0.2s ease;
+  transition:
+    color var(--dur-fast),
+    background var(--dur-fast);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  position: relative;
 }
-.nav-link:hover, .nav-link.active {
-  color: var(--brand-500) !important;
+.nav-link:hover {
+  color: var(--text-primary) !important;
+  background: var(--surface-subtle);
+}
+.nav-link.active {
+  color: var(--brand-600) !important;
+  font-weight: 600;
+  background: var(--brand-50);
+}
+[data-bs-theme="dark"] .nav-link.active {
+  color: var(--brand-300) !important;
+  background: color-mix(in srgb, var(--brand-500) 15%, transparent);
 }
 
-/* Cards & UI elements */
+/* ==========================================================================
+   4. CARDS — Layered depth & refined hover
+   ========================================================================== */
 .card-itsa {
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg, 12px);
+  border-radius: var(--radius-lg);
   background-color: var(--surface-card);
   color: var(--text-primary);
-  box-shadow: var(--shadow-sm);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.03),
+    0 1px 3px rgba(0, 0, 0, 0.04);
+  transition:
+    transform var(--dur-base) var(--ease-spring),
+    box-shadow var(--dur-base),
+    border-color var(--dur-base);
 }
 .card-itsa:hover {
-  box-shadow: var(--shadow-md);
-}
-.card-hero {
-  background: var(--brand-gradient, linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%));
-  color: #ffffff;
-  border-radius: var(--radius-xl, 16px);
-  border: none;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.05),
+    0 16px 40px -8px rgba(15, 23, 42, 0.1);
+  border-color: color-mix(in srgb, var(--brand-500) 20%, var(--border-subtle));
+  transform: translateY(-2px);
 }
 
-/* Badges */
-.badge-role-admin {
-  background-color: #ef4444;
+/* Hero card — Rich gradient with ambient glow */
+.card-hero {
+  background: var(--brand-gradient);
   color: #ffffff;
+  border-radius: var(--radius-xl);
+  border: none;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 8px 24px -8px rgba(99, 102, 241, 0.4),
+    0 0 60px -20px rgba(99, 102, 241, 0.4);
+}
+.card-hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.2), transparent 70%);
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   5. BADGES — Refined with glow accents
+   ========================================================================== */
+.badge-role-admin {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow:
+    0 2px 6px rgba(239, 68, 68, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 .badge-role-coord {
-  background-color: #f59e0b;
-  color: #1e293b;
-  font-weight: 600;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #78350f;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow:
+    0 2px 6px rgba(245, 158, 11, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 .badge-role-student {
-  background-color: var(--brand-500);
+  background: var(--brand-gradient);
   color: #ffffff;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow:
+    0 2px 6px rgba(99, 102, 241, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
-/* ITSA Points pill */
+/* ==========================================================================
+   6. POINTS PILL — Golden, glowing
+   ========================================================================== */
 .points-pill {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+  background: var(--itsa-gold-gradient);
   color: #ffffff;
   font-weight: 700;
-  padding: 4px 12px;
-  border-radius: 20px;
+  padding: 5px 14px;
+  border-radius: var(--radius-full);
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+  font-size: 0.8125rem;
+  letter-spacing: 0.01em;
+  box-shadow:
+    0 2px 8px rgba(245, 158, 11, 0.35),
+    0 0 20px -4px rgba(245, 158, 11, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
-/* Form Controls, Inputs & Autofill */
+/* ==========================================================================
+   7. FORMS — Elevated inputs with focus glow
+   ========================================================================== */
 .form-control,
 .form-select {
   background-color: var(--surface-card);
-  border: 1px solid var(--border-subtle);
+  border: 1.5px solid var(--border-subtle);
   color: var(--text-primary);
-  border-radius: var(--radius-md, 8px);
-  transition: border-color var(--dur-fast, 150ms) ease, box-shadow var(--dur-fast, 150ms) ease, background-color var(--dur-fast, 150ms) ease;
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.9rem;
+  font-size: 0.875rem;
+  transition:
+    border-color var(--dur-fast),
+    box-shadow var(--dur-fast),
+    background-color var(--dur-fast),
+    transform var(--dur-fast);
+}
+
+.form-control:hover,
+.form-select:hover {
+  border-color: color-mix(in srgb, var(--brand-500) 30%, var(--border-subtle));
 }
 
 .form-control:focus,
 .form-select:focus {
   background-color: var(--surface-card);
-  border-color: var(--border-focus, #6366f1);
+  border-color: var(--brand-500);
   color: var(--text-primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--brand-500) 15%, transparent),
+    0 4px 12px rgba(99, 102, 241, 0.1);
   outline: none;
+  transform: translateY(-1px);
 }
 
 .form-control::placeholder {
@@ -132,14 +258,17 @@ main {
 
 .input-group-text {
   background-color: var(--surface-subtle);
-  border: 1px solid var(--border-subtle);
+  border: 1.5px solid var(--border-subtle);
   color: var(--text-muted);
+  font-weight: 500;
 }
 
 .form-label {
   color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  letter-spacing: 0.01em;
 }
-
 [data-bs-theme="dark"] .form-label {
   color: #cbd5e1;
 }
@@ -147,22 +276,28 @@ main {
 .form-check-label {
   color: var(--text-secondary);
 }
-
 [data-bs-theme="dark"] .form-check-label {
   color: #cbd5e1;
 }
 
 .form-check-input {
   background-color: var(--surface-card);
-  border-color: var(--border-subtle);
+  border-color: var(--border-default);
+  transition: all var(--dur-fast);
 }
-
 .form-check-input:checked {
   background-color: var(--brand-500);
   border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-500) 20%, transparent);
+}
+.form-check-input:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-500) 20%, transparent);
+  border-color: var(--brand-500);
 }
 
-/* Chrome / Safari / Edge Autofill Fix in Light & Dark Mode */
+/* ==========================================================================
+   8. AUTOFILL FIX — Light & Dark, seamless
+   ========================================================================== */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
@@ -171,126 +306,416 @@ input:-webkit-autofill:active {
   -webkit-text-fill-color: var(--text-primary) !important;
   caret-color: var(--text-primary) !important;
   transition: background-color 5000s ease-in-out 0s;
+  border-color: var(--border-subtle) !important;
 }
 
 [data-bs-theme="dark"] input:-webkit-autofill,
 [data-bs-theme="dark"] input:-webkit-autofill:hover,
 [data-bs-theme="dark"] input:-webkit-autofill:focus,
 [data-bs-theme="dark"] input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 1000px #1e293b inset !important;
-  -webkit-text-fill-color: #f8fafc !important;
-  caret-color: #f8fafc !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--surface-subtle) inset !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  caret-color: var(--text-primary) !important;
 }
 
-/* Admin Layout Styling */
+/* ==========================================================================
+   9. ADMIN LAYOUT — Premium sidebar & content
+   ========================================================================== */
 .admin-wrapper {
   display: flex;
   min-height: calc(100vh - 60px);
 }
+
 .admin-sidebar {
   width: 260px;
-  background-color: var(--surface-sidebar);
+  background: var(--surface-sidebar);
   border-right: 1px solid var(--border-subtle);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  transition: all 0.3s ease;
+  transition: all var(--dur-base) var(--ease-smooth);
+  position: relative;
+  box-shadow: 1px 0 0 rgba(255, 255, 255, 0.02);
 }
+
 .admin-sidebar-brand {
-  padding: 1.25rem 1.5rem;
+  padding: 1.35rem 1.5rem;
   border-bottom: 1px solid var(--border-subtle);
-  font-weight: 700;
+  font-weight: 800;
   color: var(--brand-500);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+  transition: color var(--dur-fast);
 }
+.admin-sidebar-brand:hover {
+  color: var(--brand-600);
+}
+
 .admin-sidebar-nav {
   padding: 1rem 0.75rem;
   flex: 1;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-subtle) transparent;
 }
+.admin-sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+.admin-sidebar-nav::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: var(--radius-full);
+}
+
 .admin-nav-header {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.1em;
   color: var(--text-muted);
-  padding: 0.75rem 0.75rem 0.25rem 0.75rem;
+  padding: 0.85rem 0.75rem 0.4rem 0.75rem;
+  opacity: 0.75;
 }
+
 .admin-nav-link {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.6rem 0.75rem;
+  padding: 0.65rem 0.8rem;
   color: var(--text-secondary);
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 500;
-  border-radius: 8px;
-  transition: all 0.15s ease;
-  margin-bottom: 2px;
+  border-radius: var(--radius-md);
+  transition:
+    background var(--dur-fast),
+    color var(--dur-fast),
+    transform var(--dur-fast) var(--ease-spring);
+  margin-bottom: 3px;
+  position: relative;
+  overflow: hidden;
 }
+
+/* Shimmer on hover */
+.admin-nav-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s var(--ease-smooth);
+  pointer-events: none;
+}
+.admin-nav-link:hover::after {
+  transform: translateX(100%);
+}
+
 .admin-nav-link i {
   font-size: 1.1rem;
   width: 20px;
   text-align: center;
   color: var(--text-muted);
+  transition:
+    color var(--dur-fast),
+    transform var(--dur-fast) var(--ease-spring);
+  flex-shrink: 0;
 }
+
 .admin-nav-link:hover {
   background-color: var(--surface-subtle);
-  color: var(--brand-500);
+  color: var(--text-primary);
+  transform: translateX(2px);
 }
 .admin-nav-link:hover i {
   color: var(--brand-500);
+  transform: scale(1.1);
 }
+
 .admin-nav-link.active {
-  background-color: var(--brand-50);
+  background: linear-gradient(135deg, var(--brand-50), color-mix(in srgb, var(--brand-50) 60%, transparent));
   color: var(--brand-600);
   font-weight: 600;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand-500) 15%, transparent);
 }
 .admin-nav-link.active i {
   color: var(--brand-600);
 }
+/* Active indicator bar */
+.admin-nav-link.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--brand-gradient);
+  box-shadow: 0 0 8px var(--brand-500);
+}
+
+[data-bs-theme="dark"] .admin-nav-link.active {
+  color: var(--brand-300);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(99, 102, 241, 0.04));
+  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.2);
+}
+[data-bs-theme="dark"] .admin-nav-link.active i {
+  color: var(--brand-300);
+}
+
 .admin-content {
   flex: 1;
-  padding: 1.5rem 2rem;
+  padding: 1.75rem 2.25rem;
   background-color: var(--surface-canvas);
   min-width: 0;
 }
+
 .admin-topbar {
-  background-color: var(--surface-card);
+  background: color-mix(in srgb, var(--surface-card) 90%, transparent);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
   border-bottom: 1px solid var(--border-subtle);
-  padding: 0.75rem 1.5rem;
+  padding: 0.85rem 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02);
 }
+
 .admin-search-input {
-  max-width: 320px;
-  border-radius: 20px;
-  padding-left: 2.25rem;
+  max-width: 340px;
+  border-radius: var(--radius-full);
+  padding-left: 2.5rem;
+  background: var(--surface-subtle);
+  border-color: transparent;
+  transition: all var(--dur-fast);
 }
+.admin-search-input:focus {
+  background: var(--surface-card);
+  border-color: var(--brand-500);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--brand-500) 12%, transparent),
+    0 4px 12px rgba(99, 102, 241, 0.1);
+}
+
 .admin-search-wrap {
   position: relative;
 }
 .admin-search-icon {
   position: absolute;
-  left: 0.75rem;
+  left: 0.9rem;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-muted);
+  pointer-events: none;
+  transition: color var(--dur-fast);
 }
+.admin-search-wrap:focus-within .admin-search-icon {
+  color: var(--brand-500);
+}
+
+/* Clickable card */
 .clickable-card {
   cursor: pointer;
   text-decoration: none;
   color: inherit;
   display: block;
+  transition:
+    transform var(--dur-base) var(--ease-spring),
+    box-shadow var(--dur-base);
 }
 .clickable-card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-lg) !important;
 }
+.clickable-card:active {
+  transform: translateY(-1px) scale(0.995);
+}
+
+/* ==========================================================================
+   10. FEED LAYOUT — Premium post cards
+   ========================================================================== */
+.post-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-card);
+  margin-bottom: 20px;
+  padding: var(--space-5);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.03),
+    0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  transition:
+    transform var(--dur-base) var(--ease-spring),
+    box-shadow var(--dur-base),
+    border-color var(--dur-base);
+}
+.post-card:hover {
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.05),
+    0 16px 40px -8px rgba(15, 23, 42, 0.08);
+  border-color: color-mix(in srgb, var(--brand-500) 15%, var(--border-subtle));
+  transform: translateY(-2px);
+}
+
+.post-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--brand-gradient);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow:
+    0 2px 8px rgba(99, 102, 241, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: transform var(--dur-fast) var(--ease-spring);
+}
+.post-card:hover .post-avatar {
+  transform: scale(1.05);
+}
+
+/* ==========================================================================
+   11. QR SCANNER — Glowing viewport
+   ========================================================================== */
+#qr-reader {
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 2px solid var(--brand-500) !important;
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--brand-500) 15%, transparent),
+    0 0 40px -8px var(--brand-500),
+    0 8px 32px rgba(0, 0, 0, 0.15);
+  position: relative;
+}
+
+/* ==========================================================================
+   12. CHATBOT — Modern conversation UI
+   ========================================================================== */
+.chat-window {
+  height: 450px;
+  overflow-y: auto;
+  padding: 20px;
+  background: color-mix(in srgb, var(--surface-subtle) 60%, transparent);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
+  scroll-behavior: smooth;
+}
+.chat-window::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-window::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius-full);
+}
+
+.chat-bubble-user {
+  background: var(--brand-gradient);
+  color: #ffffff;
+  border-radius: 18px 18px 4px 18px;
+  padding: 12px 18px;
+  max-width: 80%;
+  margin-left: auto;
+  margin-bottom: 14px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  box-shadow:
+    0 2px 8px rgba(99, 102, 241, 0.25),
+    0 4px 16px -4px rgba(99, 102, 241, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  animation: bubble-in-right var(--dur-base) var(--ease-spring);
+}
+
+.chat-bubble-ai {
+  background-color: var(--surface-card);
+  color: var(--text-primary);
+  border-radius: 18px 18px 18px 4px;
+  padding: 14px 18px;
+  max-width: 85%;
+  margin-right: auto;
+  margin-bottom: 14px;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  border: 1px solid var(--border-subtle);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    0 4px 12px -4px rgba(15, 23, 42, 0.06);
+  animation: bubble-in-left var(--dur-base) var(--ease-spring);
+}
+
+@keyframes bubble-in-right {
+  from { opacity: 0; transform: translateX(12px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes bubble-in-left {
+  from { opacity: 0; transform: translateX(-12px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+/* ==========================================================================
+   13. BUTTONS — Premium primary
+   ========================================================================== */
+.btn-primary {
+  background: var(--brand-gradient);
+  border-color: transparent;
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  padding: 9px 18px;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.05),
+    0 4px 12px rgba(99, 102, 241, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition:
+    transform var(--dur-fast) var(--ease-spring),
+    box-shadow var(--dur-fast),
+    background var(--dur-fast);
+}
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.35) 50%, transparent 60%);
+  transform: translateX(-100%);
+  transition: transform 0.6s var(--ease-smooth);
+  pointer-events: none;
+}
+.btn-primary:hover::before {
+  transform: translateX(100%);
+}
+.btn-primary:hover {
+  background: var(--brand-gradient-hover);
+  border-color: transparent;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.05),
+    0 8px 24px rgba(99, 102, 241, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.btn-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+.btn-primary:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   14. RESPONSIVE
+   ========================================================================== */
 @media (max-width: 991.98px) {
   .admin-sidebar {
     display: none;
@@ -300,74 +725,30 @@ input:-webkit-autofill:active {
   }
 }
 
-/* Feed layout */
-.post-card {
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  background-color: var(--surface-card);
-  margin-bottom: 20px;
-}
-.post-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  object-fit: cover;
-  background-color: var(--brand-500);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
+@media (max-width: 768px) {
+  .chat-bubble-user,
+  .chat-bubble-ai {
+    max-width: 90%;
+  }
+  .post-card {
+    padding: var(--space-4);
+  }
 }
 
-/* QR Scanner styling */
-#qr-reader {
-  border-radius: 12px;
-  overflow: hidden;
-  border: 2px solid var(--brand-500) !important;
-}
-
-/* Chatbot container */
-.chat-window {
-  height: 450px;
-  overflow-y: auto;
-  padding: 16px;
-  background-color: var(--surface-subtle);
-  border-radius: 12px;
-  border: 1px solid var(--border-subtle);
-}
-.chat-bubble-user {
-  background: var(--brand-gradient);
-  color: white;
-  border-radius: 16px 16px 4px 16px;
-  padding: 10px 16px;
-  max-width: 80%;
-  margin-left: auto;
-  margin-bottom: 12px;
-}
-.chat-bubble-ai {
-  background-color: var(--surface-card);
-  color: var(--text-primary);
-  border-radius: 16px 16px 16px 4px;
-  padding: 12px 16px;
-  max-width: 85%;
-  margin-right: auto;
-  margin-bottom: 12px;
-  border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-xs);
-}
-
-/* Buttons */
-.btn-primary {
-  background: var(--brand-gradient);
-  border-color: var(--brand-500);
-  color: #ffffff;
-  font-weight: 500;
-  border-radius: 8px;
-  padding: 8px 16px;
-}
-.btn-primary:hover {
-  background: var(--brand-gradient-hover);
-  border-color: var(--brand-600);
-  color: #ffffff;
+/* ==========================================================================
+   15. ACCESSIBILITY
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .chat-bubble-user,
+  .chat-bubble-ai,
+  .admin-nav-link::after,
+  .btn-primary::before {
+    animation: none !important;
+    transition: none !important;
+  }
+  .clickable-card:hover,
+  .card-itsa:hover,
+  .post-card:hover {
+    transform: none;
+  }
 }

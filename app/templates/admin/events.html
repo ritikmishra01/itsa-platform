@@ -2,255 +2,192 @@
 {% block title %}Event Management{% endblock %}
 
 {% block breadcrumbs %}
-<li class="breadcrumb-item active">Event Lifecycle</li>
+<li class="breadcrumb-item active">Events</li>
 {% endblock %}
 
+{# Hide the redundant context panel for admin pages #}
+{% block context_panel %}{% endblock %}
+
 {% block admin_content %}
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <div>
-        <h4 class="fw-bold mb-1">Event Lifecycle & Scheduling</h4>
-        <p class="text-muted small mb-0">Create, edit, assign coordinators, and manage lifecycle states of ITSA events</p>
-    </div>
-    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createEventModal">
-        <i class="bi bi-plus-lg me-1"></i> Create New Event
+
+{# ============ EMBEDDED COORDINATOR DATA (for Assign modal) ============ #}
+<script id="admin-coordinators-full" type="application/json">
+  [
+    {% for c in coordinators %}
+    {"id": {{ c.id }}, "full_name": {{ c.full_name | tojson }}, "email": {{ c.email | tojson }}}{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+</script>
+
+{# ============ PAGE HEADER ============ #}
+<div class="admin-page-header">
+  <div>
+    <h1 class="admin-page-title">Event Lifecycle</h1>
+    <p class="admin-page-sub">
+      Create, edit, assign coordinators, and manage the full lifecycle of ITSA events.
+    </p>
+  </div>
+  <div class="admin-page-actions">
+    <button type="button" class="admin-btn admin-btn-ghost" data-bs-toggle="modal" data-bs-target="#filterModal">
+      <i class="bi bi-funnel"></i> Filters
     </button>
+    <button type="button" class="admin-btn admin-btn-primary">
+      <i class="bi bi-plus-lg"></i> Create Event
+    </button>
+  </div>
 </div>
 
-<div class="card card-itsa overflow-hidden shadow-sm">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th class="ps-4">Title</th>
-                    <th>Category</th>
-                    <th>Date & Time</th>
-                    <th>Venue</th>
-                    <th>Registrations</th>
-                    <th>Status</th>
-                    <th class="text-end pe-4">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% if events %}
-                    {% for event in events %}
-                    <tr>
-                        <td class="ps-4">
-                            <div class="fw-bold text-dark">{{ event.title }}</div>
-                            <small class="text-muted font-monospace">ID: #{{ event.id }}</small>
-                        </td>
-                        <td><span class="badge bg-light text-dark border">{{ event.category.name if event.category else 'General' }}</span></td>
-                        <td>{{ event.start_datetime.strftime('%b %d, %Y - %I:%M %p') }}</td>
-                        <td>{{ event.venue.name if event.venue else 'TBA' }}</td>
-                        <td>
-                            <span class="fw-semibold">{{ event.current_registrations }}</span> / {{ event.max_participants if event.max_participants else '∞' }}
-                        </td>
-                        <td>
-                            <select class="form-select form-select-sm" style="width: 170px;" onchange="updateStatus({{ event.id }}, this.value)">
-                                {% for s in ['DRAFT', 'PUBLISHED', 'REGISTRATION_OPEN', 'REGISTRATION_CLOSED', 'ONGOING', 'COMPLETED', 'CANCELLED'] %}
-                                <option value="{{ s }}" {% if event.status == s %}selected{% endif %}>{{ s }}</option>
-                                {% endfor %}
-                            </select>
-                        </td>
-                        <td class="text-end pe-4">
-                            <button class="btn btn-sm btn-outline-primary me-1" onclick="openAssignCoordModal({{ event.id }})" title="Assign Coordinator">
-                                <i class="bi bi-person-plus"></i> Coord
-                            </button>
-                            <a href="{{ url_for('pages.event_detail', event_id=event.id) }}" class="btn btn-sm btn-light border" title="View Public Page">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr><td colspan="7" class="text-center py-4 text-muted">No events found.</td></tr>
-                {% endif %}
-            </tbody>
-        </table>
-    </div>
+{# ============ QUICK STATS ROW ============ #}
+<div class="admin-stats-strip">
+  <div class="admin-strip-item">
+    <div class="admin-strip-dot" style="background: #3b82f6;"></div>
+    <div class="admin-strip-label">Total</div>
+    <div class="admin-strip-value">{{ events|length }}</div>
+  </div>
+  <div class="admin-strip-item">
+    <div class="admin-strip-dot" style="background: #10b981;"></div>
+    <div class="admin-strip-label">Open</div>
+    <div class="admin-strip-value">{{ events|selectattr('status', 'equalto', 'REGISTRATION_OPEN')|list|length }}</div>
+  </div>
+  <div class="admin-strip-item">
+    <div class="admin-strip-dot" style="background: #f59e0b;"></div>
+    <div class="admin-strip-label">Ongoing</div>
+    <div class="admin-strip-value">{{ events|selectattr('status', 'equalto', 'ONGOING')|list|length }}</div>
+  </div>
+  <div class="admin-strip-item">
+    <div class="admin-strip-dot" style="background: #64748b;"></div>
+    <div class="admin-strip-label">Completed</div>
+    <div class="admin-strip-value">{{ events|selectattr('status', 'equalto', 'COMPLETED')|list|length }}</div>
+  </div>
+  <div class="admin-strip-spacer"></div>
+  <div class="admin-strip-search">
+    <i class="bi bi-search"></i>
+    <input type="text" placeholder="Search events..." id="adminEventSearch" value="{{ search or '' }}">
+  </div>
 </div>
 
-<div class="modal fade" id="createEventModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold">Create New ITSA Event</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+{# ============ EVENTS TABLE ============ #}
+<div class="admin-table-card">
+  {% if events %}
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th class="admin-col-event">Event</th>
+          <th class="admin-col-category">Category</th>
+          <th class="admin-col-date">Date & Time</th>
+          <th class="admin-col-venue">Venue</th>
+          <th class="admin-col-reg">Registrations</th>
+          <th class="admin-col-status">Status</th>
+          <th class="admin-col-actions">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for event in events %}
+        <tr data-event-id="{{ event.id }}">
+          <td class="admin-col-event">
+            <div class="admin-event-cell">
+              <div class="admin-event-thumb" style="background: linear-gradient(135deg, hsl({{ (event.id * 47) % 360 }}, 65%, 55%), hsl({{ (event.id * 47 + 30) % 360 }}, 65%, 45%));">
+                <i class="bi bi-calendar-event"></i>
+              </div>
+              <div class="admin-event-meta">
+                <div class="admin-event-name">{{ event.title }}</div>
+                <div class="admin-event-id">ID #{{ event.id }}</div>
+              </div>
             </div>
-            <form id="createEventForm" enctype="multipart/form-data">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Event Title *</label>
-                        <input type="text" class="form-control" name="title" id="eventTitleInput" required placeholder="e.g. AI & Cloud Architecture Summit 2026">
-                    </div>
-
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold">Category *</label>
-                            <select class="form-select" name="category_id" id="eventCategorySelect" required>
-                                {% for c in categories %}
-                                <option value="{{ c.id }}">{{ c.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold">Venue *</label>
-                            <select class="form-select" name="venue_id" id="eventVenueSelect" required>
-                                {% for v in venues %}
-                                <option value="{{ v.id }}">{{ v.name }} (Cap: {{ v.capacity }})</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <label class="form-label small fw-semibold mb-0">Description *</label>
-                            <button type="button" class="btn btn-sm btn-outline-primary py-0" id="btnAIGenDesc">
-                                <i class="bi bi-magic me-1"></i> Generate with Gemini AI
-                            </button>
-                        </div>
-                        <textarea class="form-control" name="description" id="eventDescriptionInput" rows="3" required placeholder="Event details, schedule, and expectations..."></textarea>
-                    </div>
-
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label small fw-semibold">Start Date & Time *</label>
-                            <input type="datetime-local" class="form-control" name="start_datetime" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-semibold">End Date & Time *</label>
-                            <input type="datetime-local" class="form-control" name="end_datetime" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-semibold">Registration Deadline *</label>
-                            <input type="datetime-local" class="form-control" name="registration_deadline" required>
-                        </div>
-                    </div>
-
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold">Max Participants (Optional)</label>
-                            <input type="number" class="form-control" name="max_participants" placeholder="Leave blank for unlimited">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold">Initial Status</label>
-                            <select class="form-select" name="status">
-                                <option value="REGISTRATION_OPEN">REGISTRATION_OPEN</option>
-                                <option value="PUBLISHED">PUBLISHED</option>
-                                <option value="DRAFT">DRAFT</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Tags (Comma-separated)</label>
-                        <input type="text" class="form-control" name="tags" placeholder="e.g. Python, AI, Cloud, Workshop">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create Event</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="assignCoordModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold">Assign Event Coordinator</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </td>
+          <td class="admin-col-category">
+            {% if event.category %}
+              <span class="admin-cat-chip">{{ event.category.name }}</span>
+            {% else %}
+              <span class="text-muted small">—</span>
+            {% endif %}
+          </td>
+          <td class="admin-col-date">
+            <div class="admin-date-cell">
+              <div class="admin-date-day">{{ event.start_datetime.strftime('%b %d, %Y') if event.start_datetime else '--' }}</div>
+              <div class="admin-date-time">{{ event.start_datetime.strftime('%I:%M %p') if event.start_datetime else '--' }}</div>
             </div>
-            <form id="assignCoordForm">
-                <input type="hidden" id="assignEventId" name="event_id">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Select Coordinator *</label>
-                        <select class="form-select" name="coordinator_id" required>
-                            {% for c in coordinators %}
-                            <option value="{{ c.id }}">{{ c.full_name }} ({{ c.email }})</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Role in Event</label>
-                        <input type="text" class="form-control" name="role_in_event" value="Lead Coordinator" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Confirm Assignment</button>
-                </div>
-            </form>
-        </div>
+          </td>
+          <td class="admin-col-venue">
+            <div class="admin-venue-cell">
+              <i class="bi bi-geo-alt"></i>
+              <span>{{ event.venue.name if event.venue else 'TBA' }}</span>
+            </div>
+          </td>
+          <td class="admin-col-reg">
+            <div class="admin-reg-cell">
+              <div class="admin-reg-count">
+                <strong>{{ event.current_registrations or 0 }}</strong>
+                <span>/ {{ event.max_participants if event.max_participants else '∞' }}</span>
+              </div>
+              {% if event.max_participants %}
+              <div class="admin-reg-bar">
+                <div class="admin-reg-bar-fill" style="width: {{ ((event.current_registrations or 0) / event.max_participants * 100)|round|int if event.max_participants else 0 }}%;"></div>
+              </div>
+              {% endif %}
+            </div>
+          </td>
+          <td class="admin-col-status">
+            <span class="admin-status-chip admin-status-{{ event.status.lower() }}">
+              <span class="admin-status-dot"></span>
+              {{ event.status.replace('_', ' ').title() }}
+            </span>
+          </td>
+          <td class="admin-col-actions">
+            <div class="admin-actions-cell">
+              <button type="button"
+                      class="admin-action-btn"
+                      title="Assign coordinators"
+                      data-action="assign-coordinator"
+                      data-event-id="{{ event.id }}"
+                      data-event-title="{{ event.title }}">
+                <i class="bi bi-person-plus"></i>
+              </button>
+              <a href="{{ url_for('pages.event_detail', event_id=event.id) }}"
+                 class="admin-action-btn"
+                 title="View details">
+                <i class="bi bi-eye"></i>
+              </a>
+              <button type="button"
+                      class="admin-action-btn"
+                      title="Edit event"
+                      data-action="edit-event"
+                      data-event-id="{{ event.id }}"
+                      data-event-title="{{ event.title }}">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button type="button"
+                      class="admin-action-btn admin-action-btn-danger"
+                      title="Cancel event"
+                      data-action="cancel-event"
+                      data-event-id="{{ event.id }}"
+                      data-event-title="{{ event.title }}">
+                <i class="bi bi-x-circle"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="admin-empty-state">
+    <div class="admin-empty-icon">
+      <i class="bi bi-calendar-x"></i>
     </div>
+    <h3>No events yet</h3>
+    <p>Create your first event to get started with ITSA scheduling.</p>
+    <button type="button" class="admin-btn admin-btn-primary">
+      <i class="bi bi-plus-lg"></i> Create First Event
+    </button>
+  </div>
+  {% endif %}
 </div>
+
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-async function updateStatus(eventId, newStatus) {
-    try {
-        await apiCall(`/api/v1/events/${eventId}/status`, 'POST', { status: newStatus });
-        showToast(`Event status updated to ${newStatus}`, 'success');
-    } catch(err) {}
-}
-
-function openAssignCoordModal(eventId) {
-    document.getElementById('assignEventId').value = eventId;
-    new bootstrap.Modal(document.getElementById('assignCoordModal')).show();
-}
-
-document.getElementById('assignCoordForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const eventId = document.getElementById('assignEventId').value;
-    const data = Object.fromEntries(new FormData(this));
-    try {
-        await apiCall(`/api/v1/events/${eventId}/coordinators`, 'POST', data);
-        showToast('Coordinator assigned successfully.', 'success');
-        bootstrap.Modal.getInstance(document.getElementById('assignCoordModal')).hide();
-    } catch(err) {}
-});
-
-document.getElementById('createEventForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const formData = new FormData(this);
-    try {
-        await apiCall('/api/v1/events', 'POST', formData, true);
-        showToast('Event created successfully!', 'success');
-        setTimeout(() => window.location.reload(), 600);
-    } catch(err) {}
-});
-
-document.getElementById('btnAIGenDesc').addEventListener('click', async function() {
-    const title = document.getElementById('eventTitleInput').value.trim();
-    if (!title) {
-        showToast('Please enter an event title first.', 'warning');
-        return;
-    }
-    this.disabled = true;
-    this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating...';
-
-    const catSelect = document.getElementById('eventCategorySelect');
-    const catName = catSelect.options[catSelect.selectedIndex].text;
-    const venueSelect = document.getElementById('eventVenueSelect');
-    const venueName = venueSelect.options[venueSelect.selectedIndex].text;
-
-    try {
-        const res = await apiCall('/api/v1/ai/generate-description', 'POST', {
-            title: title,
-            category_name: catName,
-            venue_name: venueName,
-            start_datetime: 'Upcoming'
-        });
-        document.getElementById('eventDescriptionInput').value = res.data.description;
-        showToast('Gemini generated event description!', 'success');
-    } catch(err) {
-    } finally {
-        this.disabled = false;
-        this.innerHTML = '<i class="bi bi-magic me-1"></i> Generate with Gemini AI';
-    }
-});
-</script>
+<script src="{{ url_for('static', filename='js/admin-events.js') }}"></script>
 {% endblock %}

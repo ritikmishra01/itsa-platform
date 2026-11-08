@@ -15,6 +15,7 @@ from app.models.user import User, StudentProfile
 from app.services.gamification_service import GamificationService
 from app.services.analytics_service import AnalyticsService
 from app.services.ai_service import AIService
+from app.services.feedback_service import FeedbackService
 from app.utils.decorators import coordinator_required, admin_required, student_required
 
 pages_bp = Blueprint('pages', __name__)
@@ -66,30 +67,26 @@ def logout():
     rem_samesite = current_app.config.get('REMEMBER_COOKIE_SAMESITE', 'Lax')
     sess_samesite = current_app.config.get('SESSION_COOKIE_SAMESITE', 'Lax')
 
-    # Direct delete matching exact configuration
     response.delete_cookie(cookie_name, path=rem_path, domain=rem_domain, secure=rem_secure, httponly=True, samesite=rem_samesite)
     response.delete_cookie(session_cookie, path=sess_path, domain=sess_domain, secure=sess_secure, httponly=True, samesite=sess_samesite)
 
-    # Standard browser root path fallbacks with HttpOnly and Lax
     response.delete_cookie(cookie_name, path='/', secure=False, httponly=True, samesite='Lax')
     response.delete_cookie(session_cookie, path='/', secure=False, httponly=True, samesite='Lax')
     response.delete_cookie('remember_token', path='/', secure=False, httponly=True, samesite='Lax')
     response.delete_cookie('session', path='/', secure=False, httponly=True, samesite='Lax')
 
-    # Basic root path fallbacks without SameSite/HttpOnly
     response.delete_cookie(cookie_name, path='/')
     response.delete_cookie(session_cookie, path='/')
     response.delete_cookie('remember_token', path='/')
     response.delete_cookie('session', path='/')
 
-    # Strict anti-cache headers on logout redirect
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0, private'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
     return response
 
 # -------------------------------------------------------------
-# Health Check Endpoint (Phase 1 Requirement)
+# Health Check Endpoint
 # -------------------------------------------------------------
 @pages_bp.route('/health', methods=['GET'])
 def health_check():
@@ -116,25 +113,72 @@ def home():
 
 @pages_bp.route('/events')
 def events_page():
+    from app.models.registration import EventRegistration
+
+    tab = request.args.get('tab', 'upcoming').lower()
     category_id = request.args.get('category_id')
     search = request.args.get('search')
     archive = request.args.get('archive', 'false').lower() == 'true'
+    sort = request.args.get('sort', 'date_asc')
 
+    if archive and tab == 'upcoming':
+        tab = 'past'
+
+    now = datetime.now()
     query = Event.query
-    if archive:
-        query = query.filter(Event.status.in_(['COMPLETED', 'CANCELLED']))
+
+    user_reg_event_ids = set()
+    if current_user.is_authenticated:
+        user_reg_event_ids = set(r.event_id for r in EventRegistration.query.filter_by(user_id=current_user.id).all())
+
+    if tab == 'upcoming':
+        query = query.filter(Event.status.in_(['PUBLISHED', 'REGISTRATION_OPEN', 'REGISTRATION_CLOSED']), Event.start_datetime >= now)
+    elif tab == 'ongoing':
+        query = query.filter(Event.status == 'ONGOING')
+    elif tab == 'past':
+        query = query.filter((Event.status.in_(['COMPLETED', 'CANCELLED'])) | (Event.start_datetime < now))
+    elif tab == 'my':
+        if current_user.is_authenticated:
+            query = query.filter(Event.id.in_(user_reg_event_ids) if user_reg_event_ids else Event.id == -1)
+        else:
+            query = query.filter(Event.id == -1)
     else:
-        query = query.filter(Event.status.in_(['PUBLISHED', 'REGISTRATION_OPEN', 'REGISTRATION_CLOSED', 'ONGOING']))
+        pass
 
     if category_id:
-        query = query.filter_by(category_id=int(category_id))
+        try:
+            query = query.filter_by(category_id=int(category_id))
+        except (ValueError, TypeError):
+            pass
+
     if search:
         query = query.filter(Event.title.ilike(f"%{search.strip()}%") | Event.description.ilike(f"%{search.strip()}%"))
 
-    events = query.order_by(Event.start_datetime.desc() if archive else Event.start_datetime.asc()).all()
+    if sort == 'date_desc':
+        query = query.order_by(Event.start_datetime.desc())
+    elif sort == 'popular':
+        query = query.order_by(Event.current_registrations.desc())
+    elif sort == 'title':
+        query = query.order_by(Event.title.asc())
+    else:
+        query = query.order_by(Event.start_datetime.asc())
+
+    events = query.all()
     categories = EventCategory.query.all()
 
-    return render_template('public/events.html', events=events, categories=categories, current_cat=category_id, search=search, is_archive=archive)
+    context = {
+        'events': events,
+        'categories': categories,
+        'current_cat': category_id,
+        'search': search,
+        'is_archive': archive or (tab == 'past'),
+        'current_tab': tab,
+        'sort_by': sort,
+        'user_reg_event_ids': user_reg_event_ids,
+        'now': now
+    }
+
+    return render_template('public/events.html', **context)
 
 
 @pages_bp.route('/events/<int:event_id>')
@@ -143,6 +187,7 @@ def event_detail(event_id):
     user_registered = False
     user_attended = False
     user_ticket = None
+    user_feedback = None
 
     if current_user.is_authenticated and current_user.is_student:
         reg = EventRegistration.query.filter_by(event_id=event.id, user_id=current_user.id, status='CONFIRMED').first()
@@ -152,8 +197,9 @@ def event_detail(event_id):
         att = Attendance.query.filter_by(event_id=event.id, user_id=current_user.id, status='PRESENT').first()
         if att:
             user_attended = True
+        user_feedback = Feedback.query.filter_by(event_id=event.id, user_id=current_user.id).first()
 
-    return render_template('public/event_detail.html', event=event, user_registered=user_registered, user_attended=user_attended, user_ticket=user_ticket)
+    return render_template('public/event_detail.html', event=event, user_registered=user_registered, user_attended=user_attended, user_ticket=user_ticket, user_feedback=user_feedback)
 
 
 @pages_bp.route('/login')
@@ -192,19 +238,23 @@ def verify_certificate_page(code=None):
 @pages_bp.route('/student/dashboard')
 @student_required
 def student_dashboard():
-    # Upcoming registered events
     my_regs = EventRegistration.query.filter_by(user_id=current_user.id, status='CONFIRMED').all()
     reg_events = [r.event for r in my_regs if r.event.status in ('REGISTRATION_OPEN', 'REGISTRATION_CLOSED', 'ONGOING')]
 
-    # AI Recommendations
     recs = AIService.recommend_events(current_user, top_n=3)
 
-    # Engagement Score
     score, breakdown = AIService.calculate_engagement_score(current_user)
 
-    # Counts
-    att_count = Attendance.query.filter_by(user_id=current_user.id, status='PRESENT').count()
+    att_records = Attendance.query.filter_by(user_id=current_user.id, status='PRESENT').all()
+    att_count = len(att_records)
     cert_count = Certificate.query.filter_by(user_id=current_user.id, is_valid=True).count()
+
+    attended_event_ids = [a.event_id for a in att_records]
+    submitted_feedback_event_ids = set(f.event_id for f in Feedback.query.filter_by(user_id=current_user.id).all())
+    pending_feedback_events = []
+    if attended_event_ids:
+        completed_events = Event.query.filter(Event.id.in_(attended_event_ids), Event.status == 'COMPLETED').all()
+        pending_feedback_events = [e for e in completed_events if e.id not in submitted_feedback_event_ids]
 
     return render_template('student/dashboard.html',
                            upcoming_events=reg_events,
@@ -212,14 +262,52 @@ def student_dashboard():
                            engagement_score=score,
                            engagement_breakdown=breakdown,
                            att_count=att_count,
-                           cert_count=cert_count)
+                           cert_count=cert_count,
+                           pending_feedback_events=pending_feedback_events)
 
 
 @pages_bp.route('/feed')
 @login_required
 def social_feed():
+    from app.models.post import Post, PostReaction
+    from sqlalchemy import desc
+
     hashtag = request.args.get('hashtag')
-    return render_template('student/feed.html', hashtag=hashtag)
+
+    query = Post.query.filter_by(is_active=True)
+
+    if hashtag:
+        try:
+            from app.models.post import PostHashtag
+            query = query.join(PostHashtag).filter(
+                PostHashtag.tag.ilike(f'%{hashtag}%')
+            )
+        except Exception:
+            pass
+
+    # Note: Post.comments and Post.reactions are dynamic relationships (lazy='dynamic')
+    # so we cannot eager-load them. They'll be queried per-post, which is fine for 50 posts.
+    posts = (query
+             .order_by(desc(Post.created_at))
+             .limit(50)
+             .all())
+
+    # Build user reaction map: {post_id: reaction_type}
+    user_reactions = {}
+    for p in posts:
+        reaction = PostReaction.query.filter_by(
+            post_id=p.id,
+            user_id=current_user.id
+        ).first()
+        if reaction:
+            user_reactions[p.id] = reaction.reaction_type
+
+    return render_template(
+        'student/feed.html',
+        hashtag=hashtag,
+        posts=posts,
+        user_reactions=user_reactions
+    )
 
 
 @pages_bp.route('/profile')
@@ -253,7 +341,8 @@ def my_tickets():
 @student_required
 def my_attendance():
     atts = Attendance.query.filter_by(user_id=current_user.id).order_by(Attendance.scanned_at.desc()).all()
-    return render_template('student/attendance.html', attendances=atts)
+    submitted_feedback_event_ids = set(f.event_id for f in Feedback.query.filter_by(user_id=current_user.id).all())
+    return render_template('student/attendance.html', attendances=atts, submitted_feedback_event_ids=submitted_feedback_event_ids)
 
 
 @pages_bp.route('/my-certificates')
@@ -309,8 +398,14 @@ def coordinator_dashboard():
 @coordinator_required
 def coordinator_scanner(event_id):
     event = Event.query.get_or_404(event_id)
+    if current_user.role != 'ADMIN':
+        assignment = EventCoordinator.query.filter_by(event_id=event.id, coordinator_id=current_user.id).first()
+        if not assignment:
+            flash("You are not assigned as a coordinator for this event.", "danger")
+            return redirect(url_for('pages.coordinator_dashboard'))
     recent_attendances = Attendance.query.filter_by(event_id=event.id).order_by(Attendance.scanned_at.desc()).limit(10).all()
-    return render_template('coordinator/scanner.html', event=event, recent_attendances=recent_attendances)
+    attendance_count = Attendance.query.filter_by(event_id=event.id).count()
+    return render_template('coordinator/scanner.html', event=event, recent_attendances=recent_attendances, attendance_count=attendance_count)
 
 
 @pages_bp.route('/coordinator/events/<int:event_id>/attendance')
@@ -325,9 +420,22 @@ def coordinator_attendance(event_id):
 @coordinator_required
 def coordinator_feedback(event_id):
     event = Event.query.get_or_404(event_id)
-    feedbacks = Feedback.query.filter_by(event_id=event.id).order_by(Feedback.submitted_at.desc()).all()
-    metrics = AnalyticsService.get_coordinator_event_metrics(event_id)
-    return render_template('coordinator/feedback.html', event=event, feedbacks=feedbacks, metrics=metrics)
+    if current_user.role != 'ADMIN':
+        assignment = EventCoordinator.query.filter_by(event_id=event.id, coordinator_id=current_user.id).first()
+        if not assignment:
+            flash("You are not assigned as a coordinator for this event.", "danger")
+            return redirect(url_for('pages.coordinator_dashboard'))
+
+    rating_filter = request.args.get('rating', type=int)
+    feedbacks = FeedbackService.get_event_feedback(event.id, rating=rating_filter)
+    feedback_metrics = FeedbackService.get_feedback_metrics(event.id)
+    return render_template(
+        'coordinator/feedback.html',
+        event=event,
+        feedbacks=feedbacks,
+        metrics=feedback_metrics,
+        current_rating=rating_filter
+    )
 
 
 # -------------------------------------------------------------
@@ -343,8 +451,7 @@ def admin_dashboard():
     from app.models.audit import AuditLog
 
     metrics = AnalyticsService.get_admin_dashboard_metrics()
-    
-    # Extended metrics
+
     total_coordinators = User.query.filter_by(role='COORDINATOR').count()
     upcoming_events_count = Event.query.filter(
         Event.status.in_(['PUBLISHED', 'REGISTRATION_OPEN', 'ONGOING']),
@@ -361,14 +468,11 @@ def admin_dashboard():
         'total_posts': total_posts
     }
 
-    # Upcoming events list with coordinators
     upcoming_events = Event.query.filter(
         Event.status.in_(['PUBLISHED', 'REGISTRATION_OPEN', 'ONGOING', 'DRAFT'])
     ).order_by(Event.start_datetime.asc()).limit(6).all()
 
-    # Recent activity stream
     recent_activities = []
-    # 1. Audit logs
     for log in AuditLog.query.order_by(AuditLog.created_at.desc()).limit(8).all():
         recent_activities.append({
             'user': log.user.full_name if log.user else 'System',
@@ -377,7 +481,6 @@ def admin_dashboard():
             'icon': 'bi-shield-check',
             'badge': 'bg-primary'
         })
-    # 2. Recent registrations
     for reg in EventRegistration.query.order_by(EventRegistration.registered_at.desc()).limit(5).all():
         recent_activities.append({
             'user': reg.user.full_name,
@@ -386,7 +489,6 @@ def admin_dashboard():
             'icon': 'bi-ticket-perforated',
             'badge': 'bg-info'
         })
-    # 3. Recent attendances
     for att in Attendance.query.order_by(Attendance.scanned_at.desc()).limit(5).all():
         recent_activities.append({
             'user': att.student.full_name,
@@ -395,7 +497,7 @@ def admin_dashboard():
             'icon': 'bi-patch-check',
             'badge': 'bg-success'
         })
-    
+
     recent_activities.sort(key=lambda x: x['timestamp'], reverse=True)
     recent_activities = recent_activities[:10]
 
@@ -566,6 +668,36 @@ def admin_certificates():
     )
 
 
+@pages_bp.route('/admin/feedback')
+@admin_required
+def admin_feedback():
+    event_id = request.args.get('event_id', type=int)
+    rating = request.args.get('rating', type=int)
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+
+    events = Event.query.order_by(Event.start_datetime.desc()).all()
+    feedbacks = FeedbackService.get_all_feedback_filtered(
+        event_id=event_id,
+        rating=rating,
+        start_date=start_date,
+        end_date=end_date
+    )
+    metrics = FeedbackService.get_feedback_metrics(event_id=event_id)
+
+    return render_template(
+        'admin/feedback.html',
+        events=events,
+        feedbacks=feedbacks,
+        metrics=metrics,
+        selected_event_id=event_id,
+        selected_rating=rating,
+        start_date=start_date,
+        end_date=end_date,
+        active_page='feedback'
+    )
+
+
 @pages_bp.route('/admin/community')
 @pages_bp.route('/admin/moderation')
 @admin_required
@@ -717,3 +849,99 @@ def admin_search():
         active_page='search'
     )
 
+
+@pages_bp.route('/search')
+def global_search():
+    from app.models.post import Post
+    from app.models.user import User, StudentProfile
+    from app.models.event import Event, EventCategory
+
+    q = request.args.get('q', '').strip()
+    result_type = request.args.get('type', 'all').lower()
+    department = request.args.get('department', '').strip()
+    status_filter = request.args.get('status', '').strip()
+    sort_by = request.args.get('sort', 'relevance')
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+
+    results = []
+
+    if q:
+        if result_type in ['all', 'events']:
+            ev_q = Event.query.filter(Event.title.ilike(f"%{q}%") | Event.description.ilike(f"%{q}%"))
+            if status_filter:
+                ev_q = ev_q.filter(Event.status == status_filter)
+            for e in ev_q.all():
+                results.append({
+                    'type': 'event',
+                    'title': e.title,
+                    'snippet': e.description or 'Event hosted by ITSA department.',
+                    'url': url_for('pages.event_detail', event_id=e.id),
+                    'date': e.start_datetime,
+                    'department': e.category.name if e.category else 'ITSA Events',
+                    'author': 'ITSA Coordinator',
+                    'status': e.status,
+                    'score': 2 if q.lower() in e.title.lower() else 1,
+                    'views_or_regs': e.current_registrations or 0
+                })
+
+        if result_type in ['all', 'posts']:
+            p_q = Post.query.filter(Post.content.ilike(f"%{q}%"))
+            for p in p_q.all():
+                results.append({
+                    'type': 'post',
+                    'title': f"Post by {p.author.full_name if p.author else 'Community Member'}",
+                    'snippet': p.content or '',
+                    'url': url_for('pages.social_feed'),
+                    'date': p.created_at,
+                    'department': 'Community Feed',
+                    'author': p.author.full_name if p.author else 'User',
+                    'status': 'Active',
+                    'score': 2 if q.lower() in (p.content or '').lower() else 1,
+                    'views_or_regs': p.reactions.count() if hasattr(p, 'reactions') else 0
+                })
+
+        if result_type in ['all', 'users']:
+            u_q = User.query.filter(User.full_name.ilike(f"%{q}%") | User.email.ilike(f"%{q}%"))
+            if department:
+                u_q = u_q.join(User.student_profile).filter(StudentProfile.department == department)
+            for u in u_q.all():
+                dept_name = u.student_profile.department if getattr(u, 'student_profile', None) else u.role
+                results.append({
+                    'type': 'user',
+                    'title': u.full_name,
+                    'snippet': f"Role: {u.role} • Email: {u.email} • Dept: {dept_name or 'Information Technology'}",
+                    'url': url_for('pages.profile_page') if current_user.is_authenticated and current_user.id == u.id else '#',
+                    'date': u.created_at,
+                    'department': dept_name or 'IT',
+                    'author': u.role,
+                    'status': 'Verified',
+                    'score': 2 if q.lower() in u.full_name.lower() else 1,
+                    'views_or_regs': 0
+                })
+
+    if sort_by == 'newest':
+        results.sort(key=lambda x: x['date'] if x['date'] else datetime.min, reverse=True)
+    elif sort_by == 'popular':
+        results.sort(key=lambda x: x['views_or_regs'], reverse=True)
+    else:
+        results.sort(key=lambda x: x['score'], reverse=True)
+
+    total_matches = len(results)
+    start_idx = (page - 1) * per_page
+    end_idx = start_idx + per_page
+    paginated_results = results[start_idx:end_idx]
+    total_pages = max(1, (total_matches + per_page - 1) // per_page)
+
+    return render_template(
+        'search/results.html',
+        query=q,
+        results=paginated_results,
+        total_matches=total_matches,
+        result_type=result_type,
+        current_dept=department,
+        status_filter=status_filter,
+        sort_by=sort_by,
+        page=page,
+        total_pages=total_pages
+    )

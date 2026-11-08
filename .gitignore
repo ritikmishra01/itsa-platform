@@ -1,4 +1,4 @@
-﻿# Environment and Secrets
+# Environment and Secrets
 .env
 .env.*
 !.env.example
@@ -40,8 +40,11 @@ nosetests.xml
 coverage.xml
 
 # Databases and Local Storage
-instance/
+instance/*
+!instance/itsa_platform.db
+backups/
 *.db
+!instance/itsa_platform.db
 *.sqlite
 *.sqlite3
 

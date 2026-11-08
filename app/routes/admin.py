@@ -21,6 +21,92 @@ def get_analytics_overview():
     return success_response(data)
 
 
+@admin_bp.route('/live-feed', methods=['GET'])
+@admin_required
+def get_live_feed():
+    from datetime import datetime
+    from app.models.event import Event
+    from app.models.registration import EventRegistration
+    from app.models.attendance import Attendance
+    from app.models.certificate import Certificate
+    from app.models.post import Post
+
+    metrics = AnalyticsService.get_admin_dashboard_metrics()
+    total_coordinators = User.query.filter_by(role='COORDINATOR').count()
+    upcoming_events_count = Event.query.filter(
+        Event.status.in_(['PUBLISHED', 'REGISTRATION_OPEN', 'ONGOING']),
+        Event.start_datetime >= datetime.utcnow()
+    ).count()
+    total_certificates = Certificate.query.count()
+    total_posts = Post.query.count()
+
+    recent_activities = []
+    for log in AuditLog.query.order_by(AuditLog.created_at.desc()).limit(8).all():
+        recent_activities.append({
+            'user': log.user.full_name if log.user else 'System',
+            'action': log.action.replace('_', ' ').title(),
+            'timestamp': log.created_at.strftime('%H:%M') if log.created_at else '',
+            'raw_time': log.created_at.isoformat() if log.created_at else '',
+            'icon': 'bi-shield-check',
+            'badge': 'bg-primary'
+        })
+    for reg in EventRegistration.query.order_by(EventRegistration.registered_at.desc()).limit(5).all():
+        recent_activities.append({
+            'user': reg.user.full_name if reg.user else 'Student',
+            'action': f"Registered for '{reg.event.title}'" if reg.event else 'Event Registration',
+            'timestamp': reg.registered_at.strftime('%H:%M') if reg.registered_at else '',
+            'raw_time': reg.registered_at.isoformat() if reg.registered_at else '',
+            'icon': 'bi-ticket-perforated',
+            'badge': 'bg-info'
+        })
+    for att in Attendance.query.order_by(Attendance.scanned_at.desc()).limit(5).all():
+        recent_activities.append({
+            'user': att.student.full_name if att.student else 'Student',
+            'action': f"Attended '{att.event.title}'" if att.event else 'Verified Attendance',
+            'timestamp': att.scanned_at.strftime('%H:%M') if att.scanned_at else '',
+            'raw_time': att.scanned_at.isoformat() if att.scanned_at else '',
+            'icon': 'bi-qr-code-scan',
+            'badge': 'bg-success'
+        })
+
+    # Sort activities by raw_time descending
+    recent_activities.sort(key=lambda x: x.get('raw_time', ''), reverse=True)
+
+    latest_users = []
+    for u in User.query.order_by(User.created_at.desc()).limit(5).all():
+        dept = 'N/A'
+        if u.student_profile and u.student_profile.department:
+            dept = u.student_profile.department
+        elif u.coordinator_profile and u.coordinator_profile.department:
+            dept = u.coordinator_profile.department
+
+        latest_users.append({
+            'id': u.id,
+            'full_name': u.full_name,
+            'email': u.email,
+            'role': u.role,
+            'department': dept,
+            'created_at': u.created_at.strftime('%b %d, %H:%M') if u.created_at else ''
+        })
+
+    return success_response({
+        'metrics': {
+            'total_students': metrics.get('total_students', 0),
+            'total_coordinators': total_coordinators,
+            'total_events': metrics.get('total_events', 0),
+            'upcoming_events_count': upcoming_events_count,
+            'total_registrations': metrics.get('total_registrations', 0),
+            'total_attendances': metrics.get('total_attendances', 0),
+            'total_certificates': total_certificates,
+            'total_posts': total_posts,
+        },
+        'latest_users': latest_users,
+        'recent_activities': recent_activities[:8],
+        'server_time': datetime.utcnow().isoformat()
+    })
+
+
+
 @admin_bp.route('/users', methods=['GET'])
 @admin_required
 def list_users():
@@ -441,6 +527,27 @@ def export_report_csv(report_type):
             ident = u.student_profile.student_id if u.student_profile else (u.coordinator_profile.employee_id if u.coordinator_profile else '')
             pts = u.student_profile.total_points if u.student_profile else 0
             writer.writerow([u.id, u.full_name, u.email, u.role, dept, ident, pts, 'Active' if u.is_active and not u.is_suspended else 'Suspended'])
+    elif report_type == 'feedback':
+        from app.models.feedback import Feedback
+        writer.writerow(['Feedback ID', 'Event ID', 'Event Title', 'Student Name', 'Student Email', 'Department', 'Overall Rating', 'Speaker Rating', 'Organization Rating', 'Content Rating', 'Venue Rating', 'Comments', 'Suggestions', 'Submitted At'])
+        for f in Feedback.query.order_by(Feedback.submitted_at.desc()).all():
+            dept = f.user.student_profile.department if (f.user and f.user.student_profile) else ''
+            writer.writerow([
+                f.id,
+                f.event_id,
+                f.event.title if f.event else '',
+                f.user.full_name if f.user else '',
+                f.user.email if f.user else '',
+                dept,
+                f.rating,
+                f.speaker_rating or '',
+                f.organization_rating or '',
+                f.content_rating or '',
+                f.venue_rating or '',
+                f.content or '',
+                f.suggestions or '',
+                f.submitted_at.isoformat() if f.submitted_at else ''
+            ])
     else:
         return error_response("INVALID_REPORT", "Unknown report type.", 400)
 

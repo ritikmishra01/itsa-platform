@@ -1,0 +1,597 @@
+/* ==========================================================================
+   ITSA PLATFORM — HIGH-LEVEL SEARCH PAGE
+   Premium discovery UI with glass depth, glow accents & refined motion
+   ========================================================================== */
+
+/* ==========================================================================
+   LAYOUT & GRID
+   ========================================================================== */
+.search-container {
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   FILTER SIDEBAR — Frosted glass with premium depth
+   ========================================================================== */
+.search-sidebar-filter {
+  background: color-mix(in srgb, var(--surface-card) 90%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.03),
+    0 8px 24px -8px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  position: sticky;
+  top: calc(var(--topbar-height) + 16px);
+  transition: box-shadow var(--dur-base), border-color var(--dur-base);
+}
+.search-sidebar-filter:hover {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.03),
+    0 12px 32px -8px rgba(15, 23, 42, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+[data-bs-theme="dark"] .search-sidebar-filter {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 8px 24px -8px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.search-filter-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  letter-spacing: -0.01em;
+}
+.search-filter-title i {
+  color: var(--brand-500);
+  background: color-mix(in srgb, var(--brand-500) 12%, transparent);
+  padding: 5px;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-filter-group {
+  margin-bottom: var(--space-5);
+}
+
+.search-filter-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+  display: block;
+  opacity: 0.8;
+}
+
+/* Filter nav pills — premium segmented */
+.search-nav-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  margin-bottom: 4px;
+  transition:
+    background var(--dur-fast),
+    color var(--dur-fast),
+    transform var(--dur-fast) var(--ease-spring),
+    box-shadow var(--dur-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Shimmer effect */
+.search-nav-pill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s var(--ease-smooth);
+  pointer-events: none;
+}
+.search-nav-pill:hover::after {
+  transform: translateX(100%);
+}
+
+.search-nav-pill:hover {
+  background: var(--surface-subtle);
+  color: var(--text-primary);
+  transform: translateX(2px);
+}
+
+.search-nav-pill.active {
+  background: linear-gradient(135deg, var(--brand-50), color-mix(in srgb, var(--brand-50) 60%, transparent));
+  color: var(--brand-600);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand-500) 18%, transparent);
+}
+.search-nav-pill.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--brand-gradient);
+  box-shadow: 0 0 8px var(--brand-500);
+}
+
+[data-bs-theme="dark"] .search-nav-pill.active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(99, 102, 241, 0.05));
+  color: var(--brand-300);
+  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.25);
+}
+
+/* Filter counter badge */
+.search-nav-pill .filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--text-muted) 15%, transparent);
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  transition: all var(--dur-fast);
+}
+.search-nav-pill.active .filter-count {
+  background: var(--brand-gradient);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+}
+
+/* ==========================================================================
+   RESULT CARDS — Layered depth with glow accents
+   ========================================================================== */
+.search-result-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  margin-bottom: var(--space-4);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.03),
+    0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  transition:
+    transform var(--dur-base) var(--ease-spring),
+    box-shadow var(--dur-base),
+    border-color var(--dur-base);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Top accent glow on hover */
+.search-result-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--brand-gradient);
+  opacity: 0;
+  transition: opacity var(--dur-base);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.search-result-card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--brand-500) 30%, var(--border-subtle));
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.04),
+    0 16px 40px -12px rgba(15, 23, 42, 0.12),
+    0 0 40px -16px rgba(99, 102, 241, 0.2);
+}
+.search-result-card:hover::before {
+  opacity: 1;
+}
+
+[data-bs-theme="dark"] .search-result-card:hover {
+  border-color: color-mix(in srgb, var(--brand-500) 40%, var(--border-subtle));
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.5),
+    0 16px 40px -12px rgba(0, 0, 0, 0.7),
+    0 0 40px -16px rgba(129, 140, 248, 0.3);
+}
+
+/* ==========================================================================
+   TYPE CHIPS — Glowing soft badges
+   ========================================================================== */
+.search-type-chip {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+.search-type-chip i {
+  font-size: 0.75rem;
+}
+
+.search-type-chip.event {
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  color: #047857;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 2px 6px rgba(16, 185, 129, 0.15);
+}
+[data-bs-theme="dark"] .search-type-chip.event {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1));
+  color: #34d399;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+.search-type-chip.post {
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  color: #1d4ed8;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 2px 6px rgba(59, 130, 246, 0.15);
+}
+[data-bs-theme="dark"] .search-type-chip.post {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.1));
+  color: #60a5fa;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+.search-type-chip.user {
+  background: linear-gradient(135deg, #fdf4ff, #fae8ff);
+  color: #a21caf;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 2px 6px rgba(192, 38, 211, 0.15);
+}
+[data-bs-theme="dark"] .search-type-chip.user {
+  background: linear-gradient(135deg, rgba(192, 38, 211, 0.2), rgba(192, 38, 211, 0.1));
+  color: #e879f9;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 2px 8px rgba(192, 38, 211, 0.2);
+}
+
+/* ==========================================================================
+   RESULT CONTENT
+   ========================================================================== */
+.search-result-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-decoration: none;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  transition: color var(--dur-fast);
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.search-result-title:hover {
+  color: var(--brand-500);
+}
+
+.search-result-snippet {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: var(--space-3);
+}
+
+/* ==========================================================================
+   HIGHLIGHT MARK — Glowing text highlight
+   ========================================================================== */
+.search-result-card mark,
+.search-highlight {
+  background: linear-gradient(135deg, #fef08a, #fde047);
+  color: #713f12;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 600;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 1px 3px rgba(234, 179, 8, 0.25);
+}
+[data-bs-theme="dark"] .search-result-card mark,
+[data-bs-theme="dark"] .search-highlight {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.3), rgba(234, 179, 8, 0.2));
+  color: #fde047;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 1px 4px rgba(234, 179, 8, 0.3);
+}
+
+/* ==========================================================================
+   META ROW
+   ========================================================================== */
+.search-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-3);
+  margin-top: auto;
+}
+.search-meta-row i {
+  color: var(--brand-500);
+  font-size: 0.875rem;
+  transition: transform var(--dur-fast) var(--ease-spring);
+}
+.search-result-card:hover .search-meta-row i {
+  transform: scale(1.1);
+}
+
+/* ==========================================================================
+   SUGGESTION CHIPS — Interactive pills
+   ========================================================================== */
+.suggestion-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  transition:
+    background var(--dur-fast),
+    border-color var(--dur-fast),
+    color var(--dur-fast),
+    transform var(--dur-fast) var(--ease-spring),
+    box-shadow var(--dur-fast);
+}
+.suggestion-chip:hover {
+  background: var(--brand-50);
+  border-color: var(--brand-300);
+  color: var(--brand-600);
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 12px rgba(99, 102, 241, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.suggestion-chip:active {
+  transform: translateY(0) scale(0.98);
+}
+
+[data-bs-theme="dark"] .suggestion-chip:hover {
+  background: color-mix(in srgb, var(--brand-500) 15%, transparent);
+  border-color: color-mix(in srgb, var(--brand-500) 40%, transparent);
+  color: var(--brand-300);
+  box-shadow:
+    0 4px 16px rgba(129, 140, 248, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* ==========================================================================
+   SKELETON LOADING — Premium shimmer
+   ========================================================================== */
+.skeleton-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  margin-bottom: var(--space-4);
+}
+.skeleton-line {
+  height: 14px;
+  background: linear-gradient(
+    90deg,
+    var(--surface-subtle) 25%,
+    color-mix(in srgb, var(--border-subtle) 80%, var(--surface-subtle)) 50%,
+    var(--surface-subtle) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+}
+.skeleton-line.short  { width: 30%; }
+.skeleton-line.medium { width: 60%; }
+.skeleton-line.long   { width: 100%; }
+.skeleton-line.title  { height: 20px; width: 70%; margin-bottom: 14px; }
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ==========================================================================
+   PAGINATION — Premium pill design
+   ========================================================================== */
+.pagination-pills {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.pagination-pills .page-link {
+  border-radius: var(--radius-full) !important;
+  margin: 0;
+  min-width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  background: var(--surface-card);
+  transition:
+    background var(--dur-fast),
+    border-color var(--dur-fast),
+    color var(--dur-fast),
+    transform var(--dur-fast) var(--ease-spring),
+    box-shadow var(--dur-fast);
+}
+.pagination-pills .page-link:hover {
+  background: var(--surface-subtle);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+  transform: translateY(-1px);
+}
+
+.pagination-pills .page-item.active .page-link {
+  background: var(--brand-gradient);
+  border-color: transparent;
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow:
+    0 2px 8px rgba(99, 102, 241, 0.3),
+    0 4px 16px -4px rgba(99, 102, 241, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.pagination-pills .page-item.disabled .page-link {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ==========================================================================
+   EMPTY STATE
+   ========================================================================== */
+.search-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 32px;
+  text-align: center;
+  background: color-mix(in srgb, var(--surface-card) 60%, transparent);
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-xl);
+}
+.search-empty-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    var(--surface-subtle),
+    color-mix(in srgb, var(--brand-50) 60%, var(--surface-subtle))
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  color: var(--brand-500);
+  margin-bottom: var(--space-5);
+  box-shadow:
+    0 8px 24px rgba(99, 102, 241, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  animation: float-gentle 4s ease-in-out infinite;
+}
+
+@keyframes float-gentle {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .search-sidebar-filter {
+    position: static;
+    margin-bottom: var(--space-5);
+  }
+}
+
+@media (max-width: 768px) {
+  .search-result-card {
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+  }
+  .search-result-title {
+    font-size: 1.0625rem;
+  }
+  .search-meta-row {
+    gap: 12px;
+    font-size: 0.75rem;
+  }
+  .pagination-pills .page-link {
+    min-width: 34px;
+    height: 34px;
+    font-size: 0.8125rem;
+  }
+  .search-empty {
+    padding: 56px 24px;
+  }
+}
+
+/* ==========================================================================
+   ACCESSIBILITY
+   ========================================================================== */
+.search-result-card:focus-within,
+.suggestion-chip:focus-visible,
+.search-nav-pill:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-result-card,
+  .search-result-card::before,
+  .search-nav-pill::after,
+  .suggestion-chip,
+  .pagination-pills .page-link,
+  .search-empty-icon {
+    animation: none !important;
+    transition: none !important;
+  }
+  .search-result-card:hover,
+  .suggestion-chip:hover,
+  .pagination-pills .page-link:hover {
+    transform: none;
+  }
+}

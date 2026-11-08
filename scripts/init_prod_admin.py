@@ -113,9 +113,10 @@ def init_production_system(app=None):
                     db.session.commit()
                     print(f"[+] Production Administrator account state confirmed for {admin.email}.")
 
-            # 4. Idempotently ensure 5 demo coordinators and 5 events exist
-            from scripts.seed_demo_data import seed_demo_data
-            seed_demo_data(app)
+            # 4. Seed demo data only if explicitly requested
+            if os.environ.get('SEED_DEMO_DATA', '').lower() in ('true', '1', 'yes'):
+                from scripts.seed_demo_data import seed_demo_data
+                seed_demo_data(app)
 
             print("[OK] Production initialization completed successfully.")
     except Exception as e:

@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+{% block title %}Search Results{% if query %} for "{{ query }}"{% endif %}{% endblock %}
+
+{% block content %}
+<div class="search-container py-3">
+
+  <!-- Header & Query Stats -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+      <h2 class="fw-bold mb-1" style="color: var(--text-primary);">
+        <i class="bi bi-search text-brand me-2"></i>Search Results
+      </h2>
+      <p class="text-muted small mb-0">
+        {% if query %}
+        Showing <strong>{{ results|length }}</strong> of <strong>{{ total_matches }}</strong> results for <span class="badge bg-secondary-subtle text-secondary-emphasis fs-6 px-2 py-1">"{{ query }}"</span>
+        {% else %}
+        Enter a query to search events, announcements, and department directory.
+        {% endif %}
+      </p>
+    </div>
+
+    <!-- Sort Dropdown -->
+    {% if query and total_matches > 0 %}
+    <div class="d-flex align-items-center gap-2">
+      <label for="sortSelect" class="text-muted small fw-medium text-nowrap mb-0">Sort by:</label>
+      <form method="GET" action="{{ url_for('pages.global_search') }}" id="sortForm" class="m-0">
+        <input type="hidden" name="q" value="{{ query }}">
+        <input type="hidden" name="type" value="{{ result_type }}">
+        {% if current_dept %}<input type="hidden" name="department" value="{{ current_dept }}">{% endif %}
+        {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+        <select class="form-select form-select-sm" id="sortSelect" name="sort" onchange="document.getElementById('sortForm').submit()" style="border-radius: var(--radius-md); background: var(--surface-card); color: var(--text-primary);">
+          <option value="relevance" {% if sort_by == 'relevance' %}selected{% endif %}>Relevance</option>
+          <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest First</option>
+          <option value="popular" {% if sort_by == 'popular' %}selected{% endif %}>Most Popular</option>
+        </select>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="row g-4">
+    <!-- Left Filter Sidebar -->
+    <div class="col-lg-3">
+      <div class="search-sidebar-filter">
+        <div class="search-filter-title">
+          <i class="bi bi-sliders"></i> Filter Results
+        </div>
+
+        <!-- Filter Form -->
+        <form method="GET" action="{{ url_for('pages.global_search') }}">
+          <!-- Search input for quick refinement -->
+          <div class="search-filter-group">
+            <label class="search-filter-label" for="filterSearchInput">Keyword</label>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control" id="filterSearchInput" name="q" value="{{ query }}" placeholder="Search query..." style="border-radius: var(--radius-sm);">
+              <button class="btn btn-brand btn-sm" type="submit"><i class="bi bi-search"></i></button>
+            </div>
+          </div>
+
+          <!-- Type Navigation Pills -->
+          <div class="search-filter-group">
+            <span class="search-filter-label">Content Type</span>
+            <a href="{{ url_for('pages.global_search', q=query, type='all', sort=sort_by, department=current_dept, status=status_filter) }}" class="search-nav-pill {% if result_type == 'all' %}active{% endif %}">
+              <span><i class="bi bi-collection me-2"></i> All Types</span>
+            </a>
+            <a href="{{ url_for('pages.global_search', q=query, type='events', sort=sort_by, department=current_dept, status=status_filter) }}" class="search-nav-pill {% if result_type == 'events' %}active{% endif %}">
+              <span><i class="bi bi-calendar-event me-2 text-success"></i> Events</span>
+            </a>
+            <a href="{{ url_for('pages.global_search', q=query, type='posts', sort=sort_by, department=current_dept, status=status_filter) }}" class="search-nav-pill {% if result_type == 'posts' %}active{% endif %}">
+              <span><i class="bi bi-chat-quote me-2 text-primary"></i> Posts</span>
+            </a>
+            <a href="{{ url_for('pages.global_search', q=query, type='users', sort=sort_by, department=current_dept, status=status_filter) }}" class="search-nav-pill {% if result_type == 'users' %}active{% endif %}">
+              <span><i class="bi bi-person me-2 text-info"></i> Users</span>
+            </a>
+          </div>
+
+          <!-- Department Filter -->
+          <div class="search-filter-group">
+            <label class="search-filter-label" for="deptSelect">Department</label>
+            <select class="form-select form-select-sm" id="deptSelect" name="department" onchange="this.form.submit()" style="border-radius: var(--radius-sm);">
+              <option value="">All Departments</option>
+              <option value="Information Technology" {% if current_dept == 'Information Technology' %}selected{% endif %}>Information Technology</option>
+              <option value="Computer Science" {% if current_dept == 'Computer Science' %}selected{% endif %}>Computer Science</option>
+              <option value="AI & Data Science" {% if current_dept == 'AI & Data Science' %}selected{% endif %}>AI & Data Science</option>
+            </select>
+          </div>
+
+          <!-- Event Status Filter -->
+          {% if result_type in ['all', 'events'] %}
+          <div class="search-filter-group">
+            <label class="search-filter-label" for="statusSelect">Event Status</label>
+            <select class="form-select form-select-sm" id="statusSelect" name="status" onchange="this.form.submit()" style="border-radius: var(--radius-sm);">
+              <option value="">Any Status</option>
+              <option value="REGISTRATION_OPEN" {% if status_filter == 'REGISTRATION_OPEN' %}selected{% endif %}>Registration Open</option>
+              <option value="ONGOING" {% if status_filter == 'ONGOING' %}selected{% endif %}>Ongoing</option>
+              <option value="COMPLETED" {% if status_filter == 'COMPLETED' %}selected{% endif %}>Completed</option>
+            </select>
+          </div>
+          {% endif %}
+
+          <input type="hidden" name="type" value="{{ result_type }}">
+          <input type="hidden" name="sort" value="{{ sort_by }}">
+
+          {% if query or current_dept or status_filter or result_type != 'all' %}
+          <a href="{{ url_for('pages.global_search', q=query) }}" class="btn btn-ghost btn-sm w-100 mt-2">
+            <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Filters
+          </a>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+
+    <!-- Right Results Column -->
+    <div class="col-lg-9">
+      {% if results %}
+        {% for item in results %}
+        <div class="search-result-card">
+          <!-- Top Row: Type Chip & Date/Status -->
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="search-type-chip {{ item.type }}">
+              {% if item.type == 'event' %}
+              <i class="bi bi-calendar2-event"></i> Event
+              {% elif item.type == 'post' %}
+              <i class="bi bi-chat-heart"></i> Post
+              {% else %}
+              <i class="bi bi-person-badge"></i> User
+              {% endif %}
+            </span>
+            <span class="small text-muted">
+              {% if item.date %}
+              {{ item.date.strftime('%b %d, %Y') }}
+              {% endif %}
+            </span>
+          </div>
+
+          <!-- Title -->
+          <a href="{{ item.url }}" class="search-result-title">
+            {{ item.title }}
+          </a>
+
+          <!-- Snippet (highlighted matched text via client-side helper) -->
+          <p class="search-result-snippet search-highlight-target mb-3">
+            {{ item.snippet }}
+          </p>
+
+          <!-- Meta Row -->
+          <div class="search-meta-row">
+            <div><i class="bi bi-person me-1"></i> {{ item.author }}</div>
+            <div><i class="bi bi-building me-1"></i> {{ item.department }}</div>
+            {% if item.type == 'event' and item.status %}
+            <div class="ms-auto">
+              <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ item.status }}</span>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+
+        <!-- Numbered Pagination -->
+        {% if total_pages > 1 %}
+        <nav class="d-flex justify-content-center mt-4" aria-label="Search pagination">
+          <ul class="pagination pagination-pills">
+            {% if page > 1 %}
+            <li class="page-item">
+              <a class="page-link" href="{{ url_for('pages.global_search', q=query, type=result_type, sort=sort_by, department=current_dept, status=status_filter, page=page-1) }}" aria-label="Previous">
+                &laquo;
+              </a>
+            </li>
+            {% endif %}
+
+            {% for p in range(1, total_pages + 1) %}
+            <li class="page-item {% if p == page %}active{% endif %}">
+              <a class="page-link" href="{{ url_for('pages.global_search', q=query, type=result_type, sort=sort_by, department=current_dept, status=status_filter, page=p) }}">{{ p }}</a>
+            </li>
+            {% endfor %}
+
+            {% if page < total_pages %}
+            <li class="page-item">
+              <a class="page-link" href="{{ url_for('pages.global_search', q=query, type=result_type, sort=sort_by, department=current_dept, status=status_filter, page=page+1) }}" aria-label="Next">
+                &raquo;
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+        </nav>
+        {% endif %}
+
+      {% else %}
+        <!-- Clean Empty State with Centered Illustration & Suggestion Chips -->
+        <div class="card card-itsa p-5 text-center shadow-sm" style="background: var(--surface-card); border-radius: var(--radius-xl);">
+          <div class="mb-3">
+            <div class="mx-auto d-flex align-items-center justify-content-center" style="width: 72px; height: 72px; border-radius: 50%; background: var(--brand-50); color: var(--brand-500); font-size: 2rem;">
+              <i class="bi bi-search"></i>
+            </div>
+          </div>
+          <h4 class="fw-bold mb-1" style="color: var(--text-primary);">
+            {% if query %}No results found for "{{ query }}"{% else %}Search the ITSA Platform{% endif %}
+          </h4>
+          <p class="text-muted small mx-auto mb-4" style="max-width: 480px;">
+            {% if query %}
+            We couldn't find any events, community posts, or student directory profiles matching your search term or active filters.
+            {% else %}
+            Find upcoming hackathons, tech workshops, coding challenges, and connect with faculty coordinators.
+            {% endif %}
+          </p>
+
+          <!-- Suggestion Chips -->
+          <div class="mb-4">
+            <span class="text-muted small d-block mb-2 fw-semibold">Try searching for:</span>
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+              <a href="{{ url_for('pages.global_search', q='TechFest') }}" class="suggestion-chip">
+                <i class="bi bi-lightning-charge me-1"></i> TechFest
+              </a>
+              <a href="{{ url_for('pages.global_search', q='AI') }}" class="suggestion-chip">
+                <i class="bi bi-cpu me-1"></i> AI & Machine Learning
+              </a>
+              <a href="{{ url_for('pages.global_search', q='WebDev') }}" class="suggestion-chip">
+                <i class="bi bi-code-slash me-1"></i> WebDev
+              </a>
+              <a href="{{ url_for('pages.global_search', q='Workshop') }}" class="suggestion-chip">
+                <i class="bi bi-laptop me-1"></i> Workshop
+              </a>
+              <a href="{{ url_for('pages.global_search', q='Hackathon') }}" class="suggestion-chip">
+                <i class="bi bi-trophy me-1"></i> Hackathon
+              </a>
+            </div>
+          </div>
+
+          <div>
+            <a href="{{ url_for('pages.events_page') }}" class="btn btn-brand btn-sm">
+              <i class="bi bi-calendar-event me-1"></i> Browse All Events
+            </a>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+  // Client-side instant keyword highlighting on snippet and titles
+  document.addEventListener("DOMContentLoaded", function () {
+    const q = "{{ query|e }}".trim();
+    if (!q || q.length < 2) return;
+
+    const targets = document.querySelectorAll('.search-highlight-target, .search-result-title');
+    const regex = new RegExp("(" + q.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&') + ")", "gi");
+
+    targets.forEach(el => {
+      // Highlight only text nodes
+      const text = el.innerText;
+      if (regex.test(text)) {
+        el.innerHTML = text.replace(regex, '<mark>$1</mark>');
+      }
+    });
+  });
+</script>
+{% endblock %}

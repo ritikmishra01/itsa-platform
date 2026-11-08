@@ -1,6 +1,6 @@
 /*!
  * ITSA Platform — Core Application JavaScript
- * Part B, File 5 of the Modern SaaS UI Redesign
+ * Command Center Layout — Sidebar logic removed
  * Exposes window.ITSA with toasts, command palette, optimistic UI, confetti & helpers
  */
 
@@ -66,10 +66,8 @@
 
       this.container.appendChild(item);
 
-      // Trigger animation
       setTimeout(() => item.classList.add('toast-visible'), 10);
 
-      // Progress bar animation
       const progressBar = item.querySelector('.toast-item-progress');
       if (progressBar) {
         progressBar.style.transition = `width ${duration}ms linear`;
@@ -117,7 +115,6 @@
       { label: 'View Leaderboard', url: '/leaderboard', icon: 'bi-trophy', role: 'all' },
       { label: 'Verify a Certificate', url: '/certificates/verify', icon: 'bi-patch-check', role: 'all' },
 
-      // Student Commands
       { label: 'Student Dashboard', url: '/student/dashboard', icon: 'bi-grid-1x2', role: 'STUDENT' },
       { label: 'My QR Tickets', url: '/student/tickets', icon: 'bi-ticket-perforated', role: 'STUDENT' },
       { label: 'My Attendance History', url: '/student/attendance', icon: 'bi-check2-circle', role: 'STUDENT' },
@@ -125,11 +122,9 @@
       { label: 'AI Assistant Chatbot', url: '/chatbot', icon: 'bi-robot', role: 'STUDENT' },
       { label: 'Community Feed', url: '/feed', icon: 'bi-people', role: 'all' },
 
-      // Coordinator Commands
       { label: 'Coordinator Dashboard', url: '/coordinator/dashboard', icon: 'bi-grid-1x2', role: 'COORDINATOR' },
       { label: 'QR Attendance Scanner', url: '/coordinator/scanner', icon: 'bi-qr-code-scan', role: 'COORDINATOR' },
 
-      // Admin Commands
       { label: 'Admin Control Center', url: '/admin/dashboard', icon: 'bi-speedometer2', role: 'ADMIN' },
       { label: 'User Directory', url: '/admin/users', icon: 'bi-people', role: 'ADMIN' },
       { label: 'Event Lifecycle Management', url: '/admin/events', icon: 'bi-calendar-week', role: 'ADMIN' },
@@ -170,17 +165,14 @@
       this.input = backdrop.querySelector('#cmd-palette-input');
       this.results = backdrop.querySelector('#cmd-palette-results');
 
-      // Backdrop click closes
       this.modal.addEventListener('click', (e) => {
         if (e.target === this.modal) this.close();
       });
 
-      // Search input change
       this.input.addEventListener('input', () => {
         this.render(this.input.value.trim());
       });
 
-      // Keydown handling
       this.input.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowDown') {
           e.preventDefault();
@@ -200,7 +192,6 @@
         }
       });
 
-      // Global shortcut Ctrl+K / Cmd+K
       window.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
           e.preventDefault();
@@ -261,36 +252,7 @@
   };
 
   /* ==========================================================================
-     3. SIDEBAR CONTROLS
-     ========================================================================== */
-  const sidebar = {
-    init() {
-      const isCollapsed = localStorage.getItem('itsa-sidebar-collapsed') === 'true';
-      if (isCollapsed) {
-        document.body.classList.add('sidebar-collapsed');
-      }
-
-      document.querySelectorAll('[data-sidebar-toggle]').forEach(btn => {
-        btn.addEventListener('click', () => this.toggle());
-      });
-    },
-
-    toggle() {
-      const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
-      localStorage.setItem('itsa-sidebar-collapsed', isCollapsed);
-    },
-
-    open() {
-      document.body.classList.add('sidebar-open');
-    },
-
-    close() {
-      document.body.classList.remove('sidebar-open');
-    }
-  };
-
-  /* ==========================================================================
-     4. OPTIMISTIC UI & DELIGHT HELPERS
+     3. OPTIMISTIC UI & DELIGHT HELPERS
      ========================================================================== */
   const optimistic = {
     reaction(btnEl, delta = 1) {
@@ -323,7 +285,7 @@
 
   const confetti = {
     burst(x = window.innerWidth / 2, y = window.innerHeight / 2, count = 40) {
-      const colors = ['#6366f1', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4'];
+      const colors = ['#0f2744', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4'];
       for (let i = 0; i < count; i++) {
         const el = document.createElement('div');
         el.style.position = 'fixed';
@@ -355,31 +317,95 @@
   };
 
   /* ==========================================================================
-     5. NOTIFICATIONS
+     4. NOTIFICATIONS — Mark all read with fallbacks
      ========================================================================== */
   const notifications = {
-    markAllRead() {
-      fetch('/api/v1/notifications/read-all', {
-        method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          const badge = document.getElementById('notif-count');
-          if (badge) badge.style.display = 'none';
-          document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
-          toast.success('Updated', 'All notifications marked as read.');
+    markAllRead(btnEl) {
+      // Disable the button to prevent double-clicks
+      if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.dataset.originalText = btnEl.innerHTML;
+        btnEl.innerHTML = '<i class="bi bi-hourglass-split"></i> Marking...';
+      }
+
+      // Try the primary endpoint, then a fallback if 404
+      const endpoints = [
+        '/api/v1/notifications/read-all',
+        '/api/v1/notifications/mark-all-read'
+      ];
+
+      const tryEndpoint = (index) => {
+        if (index >= endpoints.length) {
+          // All failed — still update UI optimistically
+          this.updateUI();
+          toast.info('Updated', 'Notifications cleared locally.');
+          if (btnEl) {
+            btnEl.disabled = false;
+            btnEl.innerHTML = btnEl.dataset.originalText || 'Mark all read';
+          }
+          return;
         }
-      })
-      .catch(() => {
-        toast.info('Notifications', 'Updated status.');
+
+        fetch(endpoints[index], {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(res => {
+          if (res.status === 404 && index < endpoints.length - 1) {
+            // Try next endpoint
+            tryEndpoint(index + 1);
+            return null;
+          }
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.json();
+        })
+        .then(data => {
+          if (data === null) return; // switched to fallback
+
+          this.updateUI();
+          toast.success('Done', 'All notifications marked as read.');
+
+          if (btnEl) {
+            btnEl.disabled = false;
+            btnEl.innerHTML = btnEl.dataset.originalText || 'Mark all read';
+          }
+        })
+        .catch((err) => {
+          console.error('markAllRead error:', err);
+          // Try next endpoint
+          tryEndpoint(index + 1);
+        });
+      };
+
+      tryEndpoint(0);
+    },
+
+    updateUI() {
+      // Hide every notification badge on the page
+      document.querySelectorAll('.notification-badge').forEach(b => {
+        b.style.display = 'none';
+        b.textContent = '';
+      });
+
+      // Remove unread styling
+      document.querySelectorAll('.notif-item.unread, .notif-item.is-unread, .unread').forEach(el => {
+        el.classList.remove('unread', 'is-unread');
+      });
+
+      // Swap filled bell → outline
+      document.querySelectorAll('.cmd-icon-btn i.bi-bell-fill, .floating-btn i.bi-bell-fill').forEach(i => {
+        i.classList.remove('bi-bell-fill');
+        i.classList.add('bi-bell');
       });
     }
   };
 
   /* ==========================================================================
-     6. SKELETON LOADERS
+     5. SKELETON LOADERS
      ========================================================================== */
   const skeleton = {
     card(count = 1) {
@@ -393,10 +419,11 @@
     }
   };
 
-  // Expose to window.ITSA
+  /* ==========================================================================
+     EXPOSE TO window.ITSA
+     ========================================================================== */
   window.ITSA.toast = toast;
   window.ITSA.palette = palette;
-  window.ITSA.sidebar = sidebar;
   window.ITSA.optimistic = optimistic;
   window.ITSA.copy = copy;
   window.ITSA.confetti = confetti;
@@ -404,13 +431,57 @@
   window.ITSA.skeleton = skeleton;
 
   /* ==========================================================================
-     7. GLOBAL INITIALIZATION ON DOM READY
+     GLOBAL INITIALIZATION ON DOM READY
      ========================================================================== */
   document.addEventListener('DOMContentLoaded', () => {
     toast.init();
-    sidebar.init();
 
-    // Auto-dismiss alert boxes
+    /* --- Wire command palette trigger buttons (search bar, etc.) --- */
+    document.querySelectorAll('[data-cmd-palette-open], .cmd-search').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        palette.open();
+      });
+    });
+
+    /* --- Wire "Mark all read" buttons --- */
+    document.querySelectorAll('[data-mark-all-read], .mark-all-read-btn, #mark-all-read, [data-notif-mark-all]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        notifications.markAllRead(btn);
+      });
+    });
+
+    /* --- Wire chat floating button to chatbot page --- */
+    document.querySelectorAll('[data-itsa-chat], .floating-btn[aria-label="Chat"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        // Only intercept if it's a <button>, not an <a>
+        if (btn.tagName === 'BUTTON') {
+          e.preventDefault();
+          window.location.href = '/chatbot';
+        }
+      });
+    });
+
+    /* --- Wire notification floating button --- */
+    document.querySelectorAll('[data-itsa-notifications]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        if (btn.tagName === 'BUTTON') {
+          e.preventDefault();
+          window.location.href = '/notifications';
+        }
+      });
+    });
+
+    /* --- Wire create button --- */
+    document.querySelectorAll('[data-itsa-create]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.location.href = '/events';
+      });
+    });
+
+    /* --- Auto-dismiss alert boxes --- */
     setTimeout(() => {
       document.querySelectorAll('.alert-auto-dismiss').forEach(el => {
         const bsAlert = bootstrap.Alert.getOrCreateInstance(el);
@@ -418,14 +489,14 @@
       });
     }, 5000);
 
-    // Data-copy click binding
+    /* --- Data-copy click binding --- */
     document.querySelectorAll('[data-copy]').forEach(el => {
       el.addEventListener('click', () => {
         copy(el.getAttribute('data-copy') || el.textContent);
       });
     });
 
-    // Page loaded class for transitions
+    /* --- Page loaded class for transitions --- */
     document.body.classList.add('page-loaded');
   });
 

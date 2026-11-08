@@ -3,67 +3,85 @@
 
 {% block content %}
 <div class="container-fluid p-0">
+
+    {# ============ HEADER ============ #}
     <div class="text-center mb-4">
         <span class="badge-brand mb-2 d-inline-block">
             <i class="bi bi-stars"></i> ITSA Recognition & Gamification
         </span>
-        <h2 class="fw-bold mb-1" style="color: var(--text-primary);">Student Engagement Leaderboard</h2>
+        <h2 class="fw-bold mb-1" style="color: var(--text-primary); letter-spacing: -0.02em;">
+            Student Engagement Leaderboard
+        </h2>
         <p class="text-muted small" style="max-width: 620px; margin: auto;">
             Points earned: Attending events (+10), Feedback (+5), Registering (+3), Community posts (+2).
         </p>
     </div>
 
-    <!-- Filter Pills -->
+    {# ============ FILTER PILLS ============ #}
     <div class="d-flex justify-content-center gap-2 mb-4 flex-wrap">
-        <a href="{{ url_for('pages.leaderboard_page') }}" class="pill-tag {% if not current_dept %}bg-primary text-white border-primary{% endif %}">All Departments</a>
-        <a href="{{ url_for('pages.leaderboard_page', department='Computer Science') }}" class="pill-tag {% if current_dept == 'Computer Science' %}bg-primary text-white border-primary{% endif %}">Computer Science</a>
-        <a href="{{ url_for('pages.leaderboard_page', department='Information Technology') }}" class="pill-tag {% if current_dept == 'Information Technology' %}bg-primary text-white border-primary{% endif %}">Information Technology</a>
-        <a href="{{ url_for('pages.leaderboard_page', department='Artificial Intelligence & DS') }}" class="pill-tag {% if current_dept == 'Artificial Intelligence & DS' %}bg-primary text-white border-primary{% endif %}">AI & DS</a>
+        <a href="{{ url_for('pages.leaderboard_page') }}"
+           class="pill-tag {% if not current_dept %}bg-primary text-white border-primary{% endif %}">
+            All Departments
+        </a>
+        <a href="{{ url_for('pages.leaderboard_page', department='Computer Science') }}"
+           class="pill-tag {% if current_dept == 'Computer Science' %}bg-primary text-white border-primary{% endif %}">
+            Computer Science
+        </a>
+        <a href="{{ url_for('pages.leaderboard_page', department='Information Technology') }}"
+           class="pill-tag {% if current_dept == 'Information Technology' %}bg-primary text-white border-primary{% endif %}">
+            Information Technology
+        </a>
+        <a href="{{ url_for('pages.leaderboard_page', department='Artificial Intelligence & DS') }}"
+           class="pill-tag {% if current_dept == 'Artificial Intelligence & DS' %}bg-primary text-white border-primary{% endif %}">
+            AI &amp; DS
+        </a>
     </div>
 
-    <!-- Podium for Top 3 -->
+    {# ============ PODIUM — TOP 3 ============ #}
     {% if leaderboard and leaderboard|length >= 3 %}
-    <div class="leaderboard-podium mb-4">
-        <!-- 2nd Place -->
-        <div class="podium-item">
-            <div class="topbar-avatar-btn mb-2" style="width: 44px; height: 44px; background: #64748b;">
+    <div class="leaderboard-podium mb-5">
+
+        {# --- 2nd Place --- #}
+        <div class="podium-item rank-2">
+            <div class="podium-avatar" style="background: linear-gradient(135deg, #cbd5e1, #64748b);">
                 {{ leaderboard[1].full_name[0] | upper }}
             </div>
-            <div class="fw-bold small text-truncate text-center" style="max-width: 110px;">{{ leaderboard[1].full_name }}</div>
-            <div class="small text-muted mb-2">{{ leaderboard[1].total_points }} pts</div>
+            <div class="podium-name">{{ leaderboard[1].full_name }}</div>
+            <div class="podium-points">{{ leaderboard[1].total_points }} pts</div>
             <div class="podium-stand stand-2">2</div>
         </div>
 
-        <!-- 1st Place (Crown) -->
-        <div class="podium-item">
-            <i class="bi bi-award-fill text-warning fs-3 mb-1"></i>
-            <div class="topbar-avatar-btn mb-2" style="width: 54px; height: 54px; box-shadow: var(--shadow-glow);">
+        {# --- 1st Place (Crown) --- #}
+        <div class="podium-item rank-1">
+            <i class="bi bi-crown-fill fs-3 mb-2" style="color: #fbbf24; filter: drop-shadow(0 4px 8px rgba(251, 191, 36, 0.5));"></i>
+            <div class="podium-avatar" style="background: linear-gradient(135deg, #fbbf24, #d97706);">
                 {{ leaderboard[0].full_name[0] | upper }}
             </div>
-            <div class="fw-bold small text-truncate text-center text-primary" style="max-width: 120px;">{{ leaderboard[0].full_name }}</div>
-            <div class="small fw-semibold text-warning mb-2">{{ leaderboard[0].total_points }} pts</div>
+            <div class="podium-name" style="color: #d97706;">{{ leaderboard[0].full_name }}</div>
+            <div class="podium-points" style="color: #d97706; font-weight: 700;">{{ leaderboard[0].total_points }} pts</div>
             <div class="podium-stand stand-1">1</div>
         </div>
 
-        <!-- 3rd Place -->
-        <div class="podium-item">
-            <div class="topbar-avatar-btn mb-2" style="width: 40px; height: 40px; background: #78350f;">
+        {# --- 3rd Place --- #}
+        <div class="podium-item rank-3">
+            <div class="podium-avatar" style="background: linear-gradient(135deg, #d97706, #78350f);">
                 {{ leaderboard[2].full_name[0] | upper }}
             </div>
-            <div class="fw-bold small text-truncate text-center" style="max-width: 110px;">{{ leaderboard[2].full_name }}</div>
-            <div class="small text-muted mb-2">{{ leaderboard[2].total_points }} pts</div>
+            <div class="podium-name">{{ leaderboard[2].full_name }}</div>
+            <div class="podium-points">{{ leaderboard[2].total_points }} pts</div>
             <div class="podium-stand stand-3">3</div>
         </div>
+
     </div>
     {% endif %}
 
-    <!-- Leaderboard Table -->
+    {# ============ LEADERBOARD TABLE ============ #}
     <div class="card-surface overflow-hidden" style="max-width: 960px; margin: auto;">
         <div class="table-responsive">
             <table class="table-modern">
                 <thead>
                     <tr>
-                        <th style="width: 80px;">Rank</th>
+                        <th style="width: 90px;">Rank</th>
                         <th>Student</th>
                         <th>Department</th>
                         <th>Year</th>
@@ -76,20 +94,33 @@
                         <tr {% if current_user.is_authenticated and entry.user_id == current_user.id %}style="background: var(--brand-50); font-weight: 600;"{% endif %}>
                             <td class="ps-4">
                                 {% if entry.rank == 1 %}
-                                <span class="badge bg-warning text-dark rounded-circle p-2" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trophy-fill"></i></span>
+                                    <span class="badge rounded-circle p-2"
+                                          style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+                                                 background: linear-gradient(135deg, #fbbf24, #d97706); color: #ffffff;
+                                                 box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);">
+                                        <i class="bi bi-trophy-fill"></i>
+                                    </span>
                                 {% elif entry.rank == 2 %}
-                                <span class="badge bg-secondary text-white rounded-circle p-2" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;">2</span>
+                                    <span class="badge rounded-circle p-2"
+                                          style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+                                                 background: linear-gradient(135deg, #cbd5e1, #64748b); color: #ffffff;
+                                                 box-shadow: 0 2px 8px rgba(148, 163, 184, 0.4);">
+                                        2
+                                    </span>
                                 {% elif entry.rank == 3 %}
-                                <span class="badge text-white rounded-circle p-2" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; background: #b45309;">3</span>
+                                    <span class="badge rounded-circle p-2"
+                                          style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+                                                 background: linear-gradient(135deg, #d97706, #78350f); color: #ffffff;
+                                                 box-shadow: 0 2px 8px rgba(180, 83, 9, 0.4);">
+                                        3
+                                    </span>
                                 {% else %}
-                                <span class="fw-semibold text-muted ps-2">{{ entry.rank }}</span>
+                                    <span class="fw-semibold text-muted ps-2">{{ entry.rank }}</span>
                                 {% endif %}
                             </td>
                             <td>
                                 <div class="col-avatar">
-                                    <div class="col-avatar-img">
-                                        {{ entry.full_name[0] | upper }}
-                                    </div>
+                                    <div class="col-avatar-img">{{ entry.full_name[0] | upper }}</div>
                                     <div>
                                         <div class="fw-semibold" style="color: var(--text-primary);">{{ entry.full_name }}</div>
                                         <div class="small text-muted font-mono">{{ entry.student_id or '-' }}</div>
@@ -99,7 +130,8 @@
                             <td><span class="small text-muted">{{ entry.department }}</span></td>
                             <td><span class="badge-brand">Year {{ entry.year_of_study }}</span></td>
                             <td class="text-end pe-4">
-                                <span class="fw-bold" style="color: var(--brand-500);">{{ entry.total_points }}</span> <span class="text-muted small">pts</span>
+                                <span class="fw-bold" style="color: var(--brand-500); font-size: 1rem;">{{ entry.total_points }}</span>
+                                <span class="text-muted small">pts</span>
                             </td>
                         </tr>
                         {% endfor %}
@@ -112,5 +144,6 @@
             </table>
         </div>
     </div>
+
 </div>
 {% endblock %}

@@ -1,8 +1,8 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}Event Feedback & AI Sentiment - {{ event.title }}{% endblock %}
 
 {% block content %}
-<div class="container py-2">
+<div class="container-fluid p-0">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h3 class="fw-bold mb-1">{{ event.title }} - Feedback</h3>
@@ -22,6 +22,76 @@
         <div id="aiAnalysisContent"></div>
     </div>
 
+    <!-- Feedback Metrics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="card card-itsa p-3 h-100 shadow-sm border-0">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-3 fs-4">
+                        <i class="bi bi-chat-square-quote"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Total Feedback</div>
+                        <div class="h3 fw-bold mb-0 text-dark">{{ metrics.total_count }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card card-itsa p-3 h-100 shadow-sm border-0">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-warning bg-opacity-10 text-warning p-3 rounded-3 fs-4">
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Average Rating</div>
+                        <div class="h3 fw-bold mb-0 text-dark">
+                            {{ metrics.avg_rating }} <span class="fs-6 text-muted">/ 5.0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card card-itsa p-3 h-100 shadow-sm border-0">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-success bg-opacity-10 text-success p-3 rounded-3 fs-4">
+                        <i class="bi bi-emoji-smile"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Satisfaction Rate</div>
+                        <div class="h3 fw-bold mb-0 text-success">{{ metrics.satisfaction_rate }}%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card card-itsa p-3 h-100 shadow-sm border-0">
+                <div class="d-flex flex-column justify-content-center h-100">
+                    <div class="text-muted small mb-1">Aspect Breakdown</div>
+                    <div class="d-flex justify-content-between small text-muted">
+                        <span>Speaker: <b>{{ metrics.avg_speaker_rating }}</b></span>
+                        <span>Org: <b>{{ metrics.avg_organization_rating }}</b></span>
+                        <span>Content: <b>{{ metrics.avg_content_rating }}</b></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rating Filter Pills -->
+    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+        <span class="small fw-semibold text-muted me-1">Filter by Rating:</span>
+        <a href="{{ url_for('pages.coordinator_feedback', event_id=event.id) }}" class="btn btn-sm {% if not current_rating %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+            All ({{ metrics.total_count }})
+        </a>
+        {% for star in [5, 4, 3, 2, 1] %}
+        <a href="{{ url_for('pages.coordinator_feedback', event_id=event.id, rating=star) }}" class="btn btn-sm {% if current_rating == star %}btn-warning text-dark fw-bold{% else %}btn-outline-secondary{% endif %}">
+            {{ star }} ⭐ ({{ metrics.star_counts[star] }})
+        </a>
+        {% endfor %}
+    </div>
+
     <!-- Feedback List Table -->
     <div class="card card-itsa overflow-hidden shadow-sm">
         <div class="table-responsive">
@@ -29,9 +99,9 @@
                 <thead class="table-light">
                     <tr>
                         <th class="ps-4">Student</th>
-                        <th>Rating</th>
-                        <th>Liked Best</th>
-                        <th>Suggestions</th>
+                        <th>Overall</th>
+                        <th>Aspect Ratings</th>
+                        <th>Comments & Suggestions</th>
                         <th class="text-end pe-4">Date</th>
                     </tr>
                 </thead>
@@ -39,20 +109,50 @@
                     {% if feedbacks %}
                         {% for f in feedbacks %}
                         <tr>
-                            <td class="ps-4 fw-semibold">{{ f.user.full_name }}</td>
-                            <td>
-                                <span class="text-warning">
-                                    {% for i in range(f.rating) %}⭐{% endfor %}
-                                </span>
+                            <td class="ps-4">
+                                <div class="fw-semibold text-dark">{{ f.user.full_name }}</div>
+                                <div class="small text-muted">{{ f.user.email }}</div>
+                                {% if f.user.student_profile %}
+                                <div class="badge bg-light text-muted border" style="font-size: 0.7rem;">
+                                    {{ f.user.student_profile.department }}
+                                </div>
+                                {% endif %}
                             </td>
-                            <td>{{ f.content or '-' }}</td>
-                            <td>{{ f.suggestions or '-' }}</td>
-                            <td class="text-end pe-4 small text-muted">{{ f.submitted_at.strftime('%b %d, %Y') }}</td>
+                            <td>
+                                <div class="text-warning">
+                                    {% for i in range(f.rating) %}<i class="bi bi-star-fill"></i>{% endfor %}
+                                    {% for i in range(5 - f.rating) %}<i class="bi bi-star text-muted text-opacity-25"></i>{% endfor %}
+                                </div>
+                                <div class="small fw-bold text-dark">{{ f.rating }} / 5</div>
+                            </td>
+                            <td class="small text-muted">
+                                <div>Speaker: <span class="fw-semibold text-dark">{{ f.speaker_rating or '-' }}/5</span></div>
+                                <div>Org: <span class="fw-semibold text-dark">{{ f.organization_rating or '-' }}/5</span></div>
+                                <div>Content: <span class="fw-semibold text-dark">{{ f.content_rating or '-' }}/5</span></div>
+                            </td>
+                            <td style="max-width: 320px;">
+                                {% if f.content %}
+                                <div class="small text-dark mb-1"><b>Comment:</b> {{ f.content }}</div>
+                                {% endif %}
+                                {% if f.suggestions %}
+                                <div class="small text-muted"><em>Suggestions:</em> {{ f.suggestions }}</div>
+                                {% endif %}
+                                {% if not f.content and not f.suggestions %}
+                                <span class="text-muted small">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4 small text-muted">
+                                {{ f.submitted_at.strftime('%b %d, %Y') }}<br>
+                                <span class="font-mono text-xs">{{ f.submitted_at.strftime('%I:%M %p') }}</span>
+                            </td>
                         </tr>
                         {% endfor %}
                     {% else %}
                         <tr>
-                            <td colspan="5" class="text-center py-5 text-muted">No student feedback submitted yet.</td>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="bi bi-chat-square-text fs-2 d-block mb-2 text-secondary"></i>
+                                No feedback records found matching this filter.
+                            </td>
                         </tr>
                     {% endif %}
                 </tbody>

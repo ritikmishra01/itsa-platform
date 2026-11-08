@@ -1,0 +1,139 @@
+<header id="app-command-bar" role="banner">
+
+  {# Brand — routes based on role #}
+  <a href="{% if current_user.role == 'ADMIN' %}{{ url_for('pages.admin_dashboard') }}{% elif current_user.role == 'COORDINATOR' %}{{ url_for('pages.coordinator_dashboard') }}{% else %}{{ url_for('pages.student_dashboard') }}{% endif %}" class="cmd-brand">
+    <span class="cmd-brand-logo"><i class="bi bi-cpu-fill"></i></span>
+    <span class="cmd-brand-text">ITSA</span>
+  </a>
+
+  {# Primary Nav — role-based #}
+  <nav class="cmd-nav" aria-label="Primary">
+
+    {% if current_user.role == 'ADMIN' %}
+      <a href="{{ url_for('pages.admin_dashboard') }}"
+         class="cmd-nav-link {% if request.endpoint == 'pages.admin_dashboard' %}active{% endif %}">
+        <i class="bi bi-speedometer2"></i> Dashboard
+      </a>
+      <a href="{{ url_for('pages.admin_events') }}"
+         class="cmd-nav-link {% if request.endpoint == 'pages.admin_events' %}active{% endif %}">
+        <i class="bi bi-calendar-event"></i> Events
+      </a>
+      <a href="{{ url_for('pages.admin_users') }}"
+         class="cmd-nav-link {% if request.endpoint == 'pages.admin_users' %}active{% endif %}">
+        <i class="bi bi-people"></i> Users
+      </a>
+      <a href="{{ url_for('pages.admin_analytics') }}"
+         class="cmd-nav-link {% if request.endpoint == 'pages.admin_analytics' %}active{% endif %}">
+        <i class="bi bi-bar-chart"></i> Analytics
+      </a>
+
+    {% elif current_user.role == 'COORDINATOR' %}
+      <a href="{{ url_for('pages.coordinator_dashboard') }}"
+         class="cmd-nav-link {% if request.endpoint == 'pages.coordinator_dashboard' %}active{% endif %}">
+        <i class="bi bi-speedometer2"></i> Dashboard
+      </a>
+      <a href="{{ url_for('pages.my_events') }}"
+         class="cmd-nav-link {% if request.endpoint == 'pages.my_events' %}active{% endif %}">
+        <i class="bi bi-calendar-event"></i> My Events
+      </a>
+      <a href="{{ url_for('pages.notifications_page') }}"
+         class="cmd-nav-link {% if request.endpoint == 'pages.notifications_page' %}active{% endif %}">
+        <i class="bi bi-bell"></i> Notifications
+      </a>
+
+    {% else %}
+      <a href="{{ url_for('pages.student_dashboard') }}"
+         class="cmd-nav-link {% if request.endpoint == 'pages.student_dashboard' %}active{% endif %}">
+        <i class="bi bi-house"></i> Dashboard
+      </a>
+      <a href="{{ url_for('pages.events_page') }}"
+         class="cmd-nav-link {% if request.endpoint == 'pages.events_page' %}active{% endif %}">
+        <i class="bi bi-calendar-event"></i> Events
+      </a>
+      <a href="{{ url_for('pages.social_feed') }}"
+         class="cmd-nav-link {% if request.endpoint == 'pages.social_feed' %}active{% endif %}">
+        <i class="bi bi-people"></i> Community
+      </a>
+      <a href="{{ url_for('pages.leaderboard_page') }}"
+         class="cmd-nav-link {% if request.endpoint == 'pages.leaderboard_page' %}active{% endif %}">
+        <i class="bi bi-trophy"></i> Leaderboard
+      </a>
+    {% endif %}
+
+  </nav>
+
+  {# Search — triggers command palette #}
+  <button class="cmd-search" type="button" aria-label="Open command palette" data-cmd-palette-open>
+    <i class="bi bi-search cmd-search-icon"></i>
+    <span class="cmd-search-placeholder">Search events, people, posts…</span>
+    <kbd class="cmd-search-kbd">⌘K</kbd>
+  </button>
+
+  {# Right actions #}
+  <div class="cmd-actions">
+
+    <a href="{{ url_for('pages.notifications_page') }}"
+       class="cmd-icon-btn always-show"
+       aria-label="Notifications"
+       data-itsa-notifications>
+      <i class="bi bi-bell"></i>
+      {% if unread_notifications_count and unread_notifications_count > 0 %}
+        <span class="notification-badge">{{ unread_notifications_count }}</span>
+      {% endif %}
+    </a>
+
+    {# User Menu Dropdown #}
+    <div class="cmd-user-menu" id="cmd-user-menu">
+      <button class="cmd-avatar-btn" aria-label="Account menu" type="button" id="cmd-user-toggle">
+        {{ current_user.full_name[0]|upper if current_user.full_name else 'U' }}
+      </button>
+
+      <div class="cmd-user-dropdown" id="cmd-user-dropdown" role="menu">
+        <div class="cmd-user-header">
+          <div class="cmd-user-avatar-lg">
+            {{ current_user.full_name[0]|upper if current_user.full_name else 'U' }}
+          </div>
+          <div class="cmd-user-info">
+            <div class="cmd-user-name">{{ current_user.full_name or 'User' }}</div>
+            <div class="cmd-user-email">{{ current_user.email or '' }}</div>
+            <div class="cmd-user-role">
+              {% if current_user.role == 'ADMIN' %}Administrator
+              {% elif current_user.role == 'COORDINATOR' %}Coordinator
+              {% else %}Student{% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="cmd-user-links">
+          <a href="{{ url_for('pages.profile_page') }}" class="cmd-user-link">
+            <i class="bi bi-person"></i> My Profile
+          </a>
+          <a href="{{ url_for('pages.my_events') }}" class="cmd-user-link">
+            <i class="bi bi-calendar-check"></i> My Events
+          </a>
+          <a href="{{ url_for('pages.my_tickets') }}" class="cmd-user-link">
+            <i class="bi bi-ticket-perforated"></i> My Tickets
+          </a>
+          <a href="{{ url_for('pages.my_certificates') }}" class="cmd-user-link">
+            <i class="bi bi-award"></i> My Certificates
+          </a>
+        </div>
+
+        <div class="cmd-user-links cmd-user-links-bottom">
+          <button type="button" class="cmd-user-link" data-theme-toggle>
+            <i class="bi bi-moon-stars"></i> Toggle Theme
+          </button>
+          <a href="{{ url_for('pages.logout') }}" class="cmd-user-link cmd-user-link-danger">
+            <i class="bi bi-box-arrow-right"></i> Sign Out
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <button class="cmd-menu-toggle" aria-label="Open menu" type="button" id="mobile-menu-toggle">
+      <i class="bi bi-list"></i>
+    </button>
+
+  </div>
+
+</header>

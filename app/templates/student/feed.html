@@ -1,126 +1,219 @@
 {% extends "base.html" %}
-{% block title %}ITSA Community Feed{% endblock %}
+{% block title %}Community Feed{% endblock %}
 
 {% block content %}
-<div class="container py-2" style="max-width: 760px;">
-    <!-- Create Post Box -->
-    <div class="card-surface p-4 mb-4">
-        <h5 class="fw-bold mb-3" style="color: var(--text-primary);"><i class="bi bi-pencil-square me-2" style="color: var(--brand-500);"></i> Share with ITSA Community</h5>
-        <form id="createPostForm" enctype="multipart/form-data">
-            <div class="mb-3">
-                <textarea class="form-control-modern" name="content" rows="3" placeholder="What's happening in tech or campus? Use #hashtags and @mentions..."></textarea>
-            </div>
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div class="d-flex gap-2">
-                    <label class="btn btn-ghost btn-xs">
-                        <i class="bi bi-image text-success me-1"></i> Photos
-                        <input type="file" name="images" multiple accept="image/*" class="d-none">
-                    </label>
-                    <label class="btn btn-ghost btn-xs">
-                        <i class="bi bi-camera-video text-danger me-1"></i> Video
-                        <input type="file" name="video" accept="video/*" class="d-none">
-                    </label>
-                </div>
-                <button type="submit" class="btn btn-brand btn-sm px-4">
-                    <i class="bi bi-send-fill me-1"></i> Post (+2 pts)
-                </button>
-            </div>
-        </form>
-    </div>
+<div class="container-fluid p-0">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-8 col-xl-7">
 
-    <!-- Feed Filter Indicator if Hashtag -->
-    {% if hashtag %}
-    <div class="p-3 mb-4 rounded-md d-flex justify-content-between align-items-center" style="background: var(--brand-50); border: 1px solid var(--brand-200);">
-        <span class="small fw-semibold" style="color: var(--brand-700);">Showing posts tagged with <b>#{{ hashtag }}</b></span>
-        <a href="{{ url_for('pages.social_feed') }}" class="btn btn-ghost btn-xs">Clear Filter</a>
-    </div>
-    {% endif %}
-
-    <!-- Posts Stream Container -->
-    <div id="postsStream">
-        <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status"></div>
-            <div class="small text-muted mt-2">Loading community posts...</div>
+      {# ============ POST CREATOR ============ #}
+      <div class="social-composer mb-4">
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div class="social-avatar social-avatar-md">
+            {{ current_user.full_name[0] | upper if current_user.full_name else 'U' }}
+          </div>
+          <div>
+            <div class="fw-bold" style="color: var(--text-primary); font-size: 0.9375rem;">
+              {{ current_user.full_name or 'You' }}
+            </div>
+            <div class="small text-muted">Share something with the ITSA community</div>
+          </div>
         </div>
+
+        <form id="postForm" enctype="multipart/form-data">
+          <textarea
+            class="social-composer-input"
+            name="content"
+            rows="3"
+            placeholder="What's happening in tech or on campus? Use #hashtags and @mentions…"></textarea>
+
+          <input type="file" id="feed-photo-input" accept="image/*" hidden>
+          <input type="file" id="feed-video-input" accept="video/*" hidden>
+
+          <div id="feed-media-preview" style="display:none; margin-top:12px;"></div>
+
+          <div class="social-composer-actions">
+            <div class="d-flex gap-2">
+              <button type="button" class="social-attach-btn" data-feed-action="photos">
+                <i class="bi bi-image"></i> <span class="d-none d-sm-inline">Photos</span>
+              </button>
+              <button type="button" class="social-attach-btn" data-feed-action="video">
+                <i class="bi bi-camera-video"></i> <span class="d-none d-sm-inline">Video</span>
+              </button>
+            </div>
+            <button type="submit" class="social-post-btn">
+              <i class="bi bi-send-fill"></i> Post
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {# ============ POSTS FEED ============ #}
+      {% if posts %}
+        {% for post in posts %}
+
+        <article class="social-post" data-post-id="{{ post.id }}">
+
+          {# --- Post Header --- #}
+          <header class="social-post-header">
+            <div class="social-avatar social-avatar-md"
+                 style="background: linear-gradient(135deg, hsl({{ (post.user_id * 47) % 360 }}, 65%, 55%), hsl({{ (post.user_id * 47 + 30) % 360 }}, 65%, 45%));">
+              {{ post.author.full_name[0] | upper if post.author and post.author.full_name else 'U' }}
+            </div>
+            <div class="social-post-meta">
+              <div class="social-post-author">
+                {{ post.author.full_name if post.author else 'Unknown' }}
+                {% if post.author and post.author.role == 'COORDINATOR' %}
+                  <span class="social-role-badge" style="background: #fef3c7; color: #b45309;">Coordinator</span>
+                {% elif post.author and post.author.role == 'ADMIN' %}
+                  <span class="social-role-badge" style="background: #fee2e2; color: #b91c1c;">Admin</span>
+                {% endif %}
+              </div>
+              <div class="social-post-time">
+                <i class="bi bi-globe2"></i>
+                {{ post.created_at.strftime('%b %d at %I:%M %p') if post.created_at else 'Just now' }}
+              </div>
+            </div>
+            <div class="social-post-menu">
+              <button class="social-icon-btn" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-three-dots"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="#"><i class="bi bi-bookmark me-2"></i> Save post</a></li>
+                <li><a class="dropdown-item" href="#"><i class="bi bi-bell me-2"></i> Turn off notifications</a></li>
+                {% if current_user.id == post.user_id %}
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i> Delete post</a></li>
+                {% endif %}
+              </ul>
+            </div>
+          </header>
+
+          {# --- Post Content --- #}
+          {% if post.content %}
+          <div class="social-post-content">
+            {{ post.content }}
+          </div>
+          {% endif %}
+
+          {# --- Post Media (if any) --- #}
+          {% if post.media %}
+            {% set media_list = post.media.all() %}
+            {% if media_list %}
+            <div class="social-post-media">
+              {% for m in media_list %}
+                {% if m.media_type == 'IMAGE' %}
+                  <img src="{{ url_for('pages.serve_upload', filename=m.file_path.replace('uploads/', '')) }}"
+                       alt="Post image" loading="lazy">
+                {% elif m.media_type == 'VIDEO' %}
+                  <video src="{{ url_for('pages.serve_upload', filename=m.file_path.replace('uploads/', '')) }}"
+                         controls style="width:100%; max-height:600px; display:block;"></video>
+                {% endif %}
+              {% endfor %}
+            </div>
+            {% endif %}
+          {% endif %}
+
+          {# --- Reaction Counts --- #}
+          {% set total_reactions = (post.reactions.count() if post.reactions else 0) %}
+          {% if total_reactions > 0 %}
+          <div class="social-post-stats">
+            <div class="social-reaction-summary">
+              <span class="social-reaction-bubble" style="background: #dbeafe;">👍</span>
+              <span class="social-reaction-bubble" style="background: #fee2e2;">❤️</span>
+              <span class="social-reaction-bubble" style="background: #fef3c7;">⭐</span>
+              <span class="ms-2">{{ total_reactions }}</span>
+            </div>
+            <div class="social-comment-count">
+              {% set comment_ct = post.comments.count() if post.comments else 0 %}
+              {% if comment_ct > 0 %}
+                {{ comment_ct }} comment{{ 's' if comment_ct != 1 else '' }}
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+
+          {# --- Action Bar --- #}
+          <div class="social-post-actions">
+            <button class="social-action-btn {% if user_reactions.get(post.id) == 'LIKE' %}active{% endif %}"
+                    data-reaction="LIKE" data-post-id="{{ post.id }}">
+              <i class="bi bi-hand-thumbs-up{% if user_reactions.get(post.id) == 'LIKE' %}-fill{% endif %}"></i>
+              <span>Like</span>
+            </button>
+            <button class="social-action-btn {% if user_reactions.get(post.id) == 'LOVE' %}active{% endif %}"
+                    data-reaction="LOVE" data-post-id="{{ post.id }}">
+              <i class="bi bi-heart{% if user_reactions.get(post.id) == 'LOVE' %}-fill{% endif %}"></i>
+              <span>Love</span>
+            </button>
+            <button class="social-action-btn {% if user_reactions.get(post.id) == 'CELEBRATE' %}active{% endif %}"
+                    data-reaction="CELEBRATE" data-post-id="{{ post.id }}">
+              <i class="bi bi-star{% if user_reactions.get(post.id) == 'CELEBRATE' %}-fill{% endif %}"></i>
+              <span>Celebrate</span>
+            </button>
+            <button class="social-action-btn social-action-comment" data-post-id="{{ post.id }}">
+              <i class="bi bi-chat-dots"></i> <span>Comment</span>
+            </button>
+          </div>
+
+          {# --- Comment List (Latest 3) --- #}
+          {% set post_comments = post.comments.all() %}
+          {% if post_comments %}
+          <div class="social-comments-list" id="comments-{{ post.id }}">
+            {% for comment in post_comments[:3] %}
+            <div class="social-comment-item">
+              <div class="social-avatar social-avatar-xs">
+                {{ comment.author.full_name[0] | upper if comment.author and comment.author.full_name else 'U' }}
+              </div>
+              <div class="social-comment-content">
+                <div class="social-comment-author">
+                  {{ comment.author.full_name if comment.author else 'Unknown' }}
+                </div>
+                <div class="social-comment-text">{{ comment.content }}</div>
+              </div>
+            </div>
+            {% endfor %}
+
+            {% if post_comments|length > 3 %}
+              <button class="social-view-more" data-post-id="{{ post.id }}">
+                View all {{ post_comments|length }} comments
+              </button>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          {# --- Quick Comment Input --- #}
+          <div class="social-comment-box">
+            <div class="social-avatar social-avatar-sm">
+              {{ current_user.full_name[0] | upper if current_user.full_name else 'U' }}
+            </div>
+            <input type="text"
+                   class="social-comment-input"
+                   placeholder="Write a comment…"
+                   data-post-id="{{ post.id }}">
+            <button class="social-send-btn" data-post-id="{{ post.id }}">
+              <i class="bi bi-send"></i>
+            </button>
+          </div>
+
+        </article>
+
+        {% endfor %}
+      {% else %}
+        {# --- Empty State --- #}
+        <div class="social-empty">
+          <div class="social-empty-icon">
+            <i class="bi bi-people"></i>
+          </div>
+          <h5 class="fw-bold mb-2" style="color: var(--text-primary);">No posts yet</h5>
+          <p class="text-muted small mb-4">Be the first to share something with the ITSA community!</p>
+        </div>
+      {% endif %}
+
     </div>
+  </div>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-async function loadFeed() {
-    const url = "{{ url_for('api_posts.get_feed') }}{% if hashtag %}?hashtag={{ hashtag }}{% endif %}";
-    try {
-        const res = await apiCall(url, 'GET');
-        const container = document.getElementById('postsStream');
-        if (!res.data || res.data.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon"><i class="bi bi-chat-heart"></i></div>
-                    <div class="empty-state-title">No posts yet</div>
-                    <div class="empty-state-desc">Be the first to share an update, tech discovery, or event memory!</div>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = res.data.map(p => `
-            <div class="feed-post-card" id="post-${p.id}">
-                <div class="feed-author">
-                    <div class="topbar-avatar-btn" style="width: 40px; height: 40px; font-size: 1rem;">
-                        ${(p.author_name || 'U')[0].toUpperCase()}
-                    </div>
-                    <div>
-                        <div class="fw-bold small" style="color: var(--text-primary);">${p.author_name}</div>
-                        <div class="small text-muted" style="font-size: 0.75rem;">${p.created_at || 'Recently'} &bull; <span class="badge-brand">${p.author_role || 'STUDENT'}</span></div>
-                    </div>
-                </div>
-
-                <div class="mt-3" style="color: var(--text-primary); line-height: 1.6; white-space: pre-wrap;">${p.content}</div>
-
-                <div class="d-flex gap-2 mt-3 pt-2 border-top" style="border-color: var(--border-subtle) !important;">
-                    <button class="reaction-btn" onclick="reactPost(${p.id}, 'LIKE', this)">
-                        👍 <span class="reaction-count">${p.reactions_count || 0}</span>
-                    </button>
-                    <button class="reaction-btn" onclick="reactPost(${p.id}, 'LOVE', this)">
-                        ❤️
-                    </button>
-                    <button class="reaction-btn" onclick="reactPost(${p.id}, 'CELEBRATE', this)">
-                        🎉
-                    </button>
-                </div>
-            </div>
-        `).join('');
-    } catch(e) {
-        document.getElementById('postsStream').innerHTML = '<div class="text-center py-4 text-danger small">Failed to load posts.</div>';
-    }
-}
-
-async function reactPost(postId, reactionType, btnEl) {
-    if (window.ITSA && window.ITSA.optimistic) {
-        window.ITSA.optimistic.reaction(btnEl, 1);
-    }
-    try {
-        await apiCall(`/api/v1/posts/${postId}/react`, 'POST', { reaction_type: reactionType });
-    } catch(e) {}
-}
-
-document.getElementById('createPostForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const btn = this.querySelector('button[type="submit"]');
-    btn.disabled = true;
-    try {
-        const formData = new FormData(this);
-        await apiCall('{{ url_for("api_posts.create_post") }}', 'POST', formData);
-        this.reset();
-        loadFeed();
-        if (window.ITSA && window.ITSA.toast) window.ITSA.toast.success('Posted!', 'Your post has been shared (+2 pts).');
-    } catch(err) {
-    } finally {
-        btn.disabled = false;
-    }
-});
-
-document.addEventListener('DOMContentLoaded', loadFeed);
-</script>
+<script src="{{ url_for('static', filename='js/feed.js') }}"></script>
 {% endblock %}

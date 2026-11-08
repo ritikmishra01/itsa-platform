@@ -1,0 +1,574 @@
+"""
+Final Pixel-Perfect System Flowchart Generator for ITSA Platform.
+"""
+import os
+import subprocess
+
+SVG_CONTENT = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2400 1780" width="2400" height="1780" style="background-color: #ffffff; font-family: 'Segoe UI', Arial, -apple-system, Roboto, sans-serif;">
+  <defs>
+    <!-- Arrow marker definition -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#1e293b" />
+    </marker>
+    <!-- Drop shadow for sleek depth -->
+    <filter id="soft-shadow" x="-6%" y="-6%" width="112%" height="118%">
+      <feDropShadow dx="1.5" dy="2.5" stdDeviation="2.5" flood-opacity="0.10" flood-color="#0f172a" />
+    </filter>
+  </defs>
+
+  <style>
+    .title-main { font-size: 30px; font-weight: 800; fill: #0f172a; text-anchor: middle; letter-spacing: -0.3px; }
+    .title-sub { font-size: 15px; font-weight: 500; fill: #64748b; text-anchor: middle; }
+    .lane-title { font-size: 17px; font-weight: 700; text-anchor: middle; text-transform: uppercase; letter-spacing: 0.8px; }
+    .lane-box { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.5; stroke-dasharray: 6 4; rx: 14; }
+    
+    /* Flowchart Shape Styles exactly matching reference */
+    .shape-start-end { fill: #FCE0E3; stroke: #1e293b; stroke-width: 2.2; filter: url(#soft-shadow); }
+    .shape-io { fill: #D7E8FB; stroke: #1e293b; stroke-width: 2.2; filter: url(#soft-shadow); }
+    .shape-process { fill: #FDE68A; stroke: #1e293b; stroke-width: 2.2; filter: url(#soft-shadow); rx: 5; }
+    .shape-decision { fill: #FED7AA; stroke: #1e293b; stroke-width: 2.2; filter: url(#soft-shadow); }
+    .shape-doc { fill: #93C5FD; stroke: #1e293b; stroke-width: 2.2; filter: url(#soft-shadow); }
+    .shape-db { fill: #BFDBFE; stroke: #1e293b; stroke-width: 2.2; filter: url(#soft-shadow); }
+    .shape-ai { fill: #EDE9FE; stroke: #7C3AED; stroke-width: 2; stroke-dasharray: 5 4; rx: 10; }
+    
+    /* Text styles */
+    .node-text { font-size: 13.5px; font-weight: 600; fill: #0f172a; text-anchor: middle; dominant-baseline: central; }
+    .node-text-sm { font-size: 12px; font-weight: 600; fill: #0f172a; text-anchor: middle; dominant-baseline: central; }
+    .node-text-bold { font-size: 14.5px; font-weight: 700; fill: #0f172a; text-anchor: middle; dominant-baseline: central; }
+    .branch-yes { font-size: 13px; font-weight: 700; fill: #15803d; }
+    .branch-no { font-size: 13px; font-weight: 700; fill: #b91c1c; }
+    .flow-line { fill: none; stroke: #1e293b; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; marker-end: url(#arrow); }
+    .flow-line-dashed { fill: none; stroke: #6366f1; stroke-width: 1.8; stroke-dasharray: 5 4; stroke-linecap: round; marker-end: url(#arrow); }
+    .conn-circle { fill: #ffffff; stroke: #1e293b; stroke-width: 2.2; }
+    .conn-cross { stroke: #1e293b; stroke-width: 2; }
+    .legend-text { font-size: 13px; font-weight: 600; fill: #1e293b; text-anchor: start; dominant-baseline: central; }
+  </style>
+
+  <!-- ================= HEADER ================= -->
+  <g transform="translate(1200, 48)">
+    <text class="title-main" y="0">ITSA – AI-Powered Event Management &amp; Student Engagement Platform</text>
+    <text class="title-sub" y="28">Complete End-to-End System Architecture Flowchart | Role-Based Access Control (Student • Coordinator • Admin)</text>
+  </g>
+
+  <!-- ================= FLOWCHART LEGEND (TOP LEFT) ================= -->
+  <g transform="translate(60, 45)">
+    <rect x="0" y="0" width="410" height="320" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" rx="10" filter="url(#soft-shadow)" />
+    <text x="205" y="26" class="node-text-bold" fill="#0f172a">FLOWCHART SYMBOLS LEGEND</text>
+    <line x1="20" y1="40" x2="390" y2="40" stroke="#e2e8f0" stroke-width="1.5" />
+    
+    <!-- Legend item 1: Oval -->
+    <ellipse cx="45" cy="65" rx="22" ry="11" class="shape-start-end" />
+    <text x="85" y="65" class="legend-text">Start / End Terminator (Pink Oval)</text>
+
+    <!-- Legend item 2: Parallelogram -->
+    <polygon points="32,92 62,92 52,110 22,110" class="shape-io" />
+    <text x="85" y="101" class="legend-text">I/O or System Action (Blue Parallelogram)</text>
+
+    <!-- Legend item 3: Rectangle -->
+    <rect x="25" y="126" width="40" height="20" class="shape-process" />
+    <text x="85" y="136" class="legend-text">Process / Operation (Yellow Rectangle)</text>
+
+    <!-- Legend item 4: Diamond -->
+    <polygon points="45,158 64,170 45,182 26,170" class="shape-decision" />
+    <text x="85" y="170" class="legend-text">Decision Point (Orange Diamond)</text>
+
+    <!-- Legend item 5: Document -->
+    <path d="M 28,197 L 62,197 L 62,211 C 54,207 50,215 42,211 C 36,207 33,215 28,211 Z" class="shape-doc" />
+    <text x="85" y="204" class="legend-text">Document / E-Cert / Report (Blue Wave)</text>
+
+    <!-- Legend item 6: Database Cylinder -->
+    <path d="M 32,231 A 13 4.5 0 0 1 58 231 L 58 245 A 13 4.5 0 0 1 32 245 Z" class="shape-db" />
+    <ellipse cx="45" cy="231" rx="13" ry="4.5" fill="#93C5FD" stroke="#1e293b" />
+    <text x="85" y="238" class="legend-text">Relational Database (Blue Cylinder)</text>
+
+    <!-- Legend item 7: AI Box -->
+    <rect x="28" y="265" width="34" height="20" class="shape-ai" />
+    <text x="85" y="275" class="legend-text">AI &amp; Supporting Intelligence Engine</text>
+  </g>
+
+  <!-- ================= CENTRAL TOP AUTH FLOW ================= -->
+  <!-- 1. Start Node (Pink Oval) -->
+  <g transform="translate(1200, 105)">
+    <ellipse cx="0" cy="0" rx="90" ry="24" class="shape-start-end" />
+    <text class="node-text-bold">Start</text>
+  </g>
+
+  <!-- Flow: Start -> Open ITSA Platform -->
+  <path d="M 1200 129 L 1200 152" class="flow-line" />
+
+  <!-- 2. Open Platform (Blue Parallelogram) -->
+  <g transform="translate(1200, 174)">
+    <polygon points="-110,-20 130,-20 110,20 -130,20" class="shape-io" />
+    <text class="node-text">Open ITSA Platform</text>
+  </g>
+
+  <!-- Flow: Open -> Login / Registration -->
+  <path d="M 1200 194 L 1200 216" class="flow-line" />
+
+  <!-- 3. User Login / Registration (Yellow Process) -->
+  <g transform="translate(1200, 238)">
+    <rect x="-120" y="-20" width="240" height="40" class="shape-process" />
+    <text class="node-text">User Login / Registration</text>
+  </g>
+
+  <!-- Flow: Login -> Authenticate -->
+  <path d="M 1200 258 L 1200 280" class="flow-line" />
+
+  <!-- 4. Authenticate User (Yellow Process) -->
+  <g transform="translate(1200, 300)">
+    <rect x="-115" y="-19" width="230" height="38" class="shape-process" />
+    <text class="node-text">Authenticate Credentials</text>
+  </g>
+
+  <!-- Flow: Authenticate -> Decision: Valid Credentials? -->
+  <path d="M 1200 319 L 1200 342" class="flow-line" />
+
+  <!-- 5. Decision: Valid Credentials? (Orange Diamond) -->
+  <g transform="translate(1200, 376)">
+    <polygon points="0,-32 90,0 0,32 -90,0" class="shape-decision" />
+    <text class="node-text-sm" y="-5">Valid</text>
+    <text class="node-text-sm" y="8">Credentials?</text>
+  </g>
+
+  <!-- Branch NO: Back to Login with Error -->
+  <path d="M 1110 376 L 970 376 L 970 238 L 1070 238" class="flow-line" />
+  <text x="1035" y="366" class="branch-no">No</text>
+  <g transform="translate(970, 300)">
+    <rect x="-65" y="-16" width="130" height="32" class="shape-io" />
+    <text class="node-text-sm">Show Auth Error</text>
+  </g>
+
+  <!-- Branch YES: Down to Identify Role Hub -->
+  <path d="M 1200 408 L 1200 445" class="flow-line" />
+  <text x="1210" y="426" class="branch-yes">Yes</text>
+
+  <!-- Connector Node / Role Hub -->
+  <g transform="translate(1200, 458)">
+    <circle cx="0" cy="0" r="13" class="conn-circle" />
+    <line x1="-9" y1="-9" x2="9" y2="9" class="conn-cross" />
+    <line x1="9" y1="-9" x2="-9" y2="9" class="conn-cross" />
+  </g>
+
+  <!-- Dispatch arrows from Role Hub into 3 Workflows -->
+  <!-- Student route (Left): 1200,458 -> 410,458 -> down to 565 -->
+  <path d="M 1187 458 L 410 458 L 410 565" class="flow-line" />
+  <rect x="330" y="475" width="160" height="26" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5" rx="6" />
+  <text x="410" y="488" class="node-text-bold" fill="#0369a1">Role = STUDENT</text>
+
+  <!-- Coordinator route (Center): 1200,458 -> down to 565 -->
+  <path d="M 1200 471 L 1200 565" class="flow-line" />
+  <rect x="1105" y="475" width="190" height="26" fill="#fef3c7" stroke="#d97706" stroke-width="1.5" rx="6" />
+  <text x="1200" y="488" class="node-text-bold" fill="#b45309">Role = COORDINATOR</text>
+
+  <!-- Admin route (Right): 1200,458 -> 1980,458 -> down to 565 -->
+  <path d="M 1213 458 L 1980 458 L 1980 565" class="flow-line" />
+  <rect x="1905" y="475" width="150" height="26" fill="#fae8ff" stroke="#c026d3" stroke-width="1.5" rx="6" />
+  <text x="1980" y="488" class="node-text-bold" fill="#a21caf">Role = ADMIN</text>
+
+
+  <!-- ================= SWIMLANES CONTAINERS ================= -->
+  <!-- Student Lane (x: 50..770, width: 720) -->
+  <rect x="50" y="520" width="720" height="1060" class="lane-box" />
+  <rect x="50" y="520" width="720" height="40" fill="#e0f2fe" stroke="#cbd5e1" stroke-width="1.5" rx="14" />
+  <rect x="50" y="542" width="720" height="18" fill="#e0f2fe" />
+  <text x="410" y="545" class="lane-title" fill="#0369a1">🎓 STUDENT WORKFLOW</text>
+
+  <!-- Coordinator Lane (x: 820..1580, width: 760) -->
+  <rect x="820" y="520" width="760" height="1060" class="lane-box" />
+  <rect x="820" y="520" width="760" height="40" fill="#fef3c7" stroke="#cbd5e1" stroke-width="1.5" rx="14" />
+  <rect x="820" y="542" width="760" height="18" fill="#fef3c7" />
+  <text x="1200" y="545" class="lane-title" fill="#b45309">📋 COORDINATOR WORKFLOW</text>
+
+  <!-- Admin Lane (x: 1630..2350, width: 720) -->
+  <rect x="1630" y="520" width="720" height="1060" class="lane-box" />
+  <rect x="1630" y="520" width="720" height="40" fill="#fae8ff" stroke="#cbd5e1" stroke-width="1.5" rx="14" />
+  <rect x="1630" y="542" width="720" height="18" fill="#fae8ff" />
+  <text x="1980" y="545" class="lane-title" fill="#a21caf">🛡️ ADMINISTRATOR WORKFLOW</text>
+
+
+  <!-- ================= LANE 1: STUDENT WORKFLOW (X = 410) ================= -->
+  <!-- S1: Student Dashboard -->
+  <g transform="translate(410, 595)">
+    <rect x="-115" y="-20" width="230" height="40" class="shape-process" />
+    <text class="node-text">Student Dashboard</text>
+  </g>
+  <path d="M 410 615 L 410 642" class="flow-line" />
+
+  <!-- S2: View & Select Event -->
+  <g transform="translate(410, 662)">
+    <polygon points="-110,-19 120,-19 100,19 -130,19" class="shape-io" />
+    <text class="node-text">View Upcoming Events</text>
+  </g>
+  <path d="M 410 681 L 410 708" class="flow-line" />
+
+  <!-- S3: Register for Event -->
+  <g transform="translate(410, 728)">
+    <rect x="-110" y="-19" width="220" height="38" class="shape-process" />
+    <text class="node-text">Register for Event</text>
+  </g>
+  <path d="M 410 747 L 410 774" class="flow-line" />
+
+  <!-- S4: Decision: Registration Available? -->
+  <g transform="translate(410, 808)">
+    <polygon points="0,-33 92,0 0,33 -92,0" class="shape-decision" />
+    <text class="node-text-sm" y="-5">Seats &amp; Deadline</text>
+    <text class="node-text-sm" y="8">Available?</text>
+  </g>
+
+  <!-- S4 No Branch: Show Reg Closed & Return to Events -->
+  <path d="M 318 808 L 140 808 L 140 662 L 285 662" class="flow-line" />
+  <text x="245" y="798" class="branch-no">No</text>
+  <g transform="translate(210, 745)">
+    <rect x="-65" y="-15" width="130" height="30" class="shape-io" />
+    <text class="node-text-sm">Registration Closed</text>
+  </g>
+
+  <!-- S4 Yes Branch: Generate Unique QR Ticket -->
+  <path d="M 410 841 L 410 872" class="flow-line" />
+  <text x="420" y="857" class="branch-yes">Yes</text>
+
+  <!-- S5: Generate Unique QR Ticket -->
+  <g transform="translate(410, 892)">
+    <rect x="-115" y="-19" width="230" height="38" class="shape-process" />
+    <text class="node-text">Generate Unique QR Ticket</text>
+  </g>
+  <path d="M 410 911 L 410 938" class="flow-line" />
+
+  <!-- S6: Receive QR Ticket & Notification -->
+  <g transform="translate(410, 958)">
+    <polygon points="-115,-19 125,-19 105,19 -135,19" class="shape-io" />
+    <text class="node-text">Receive Ticket &amp; Confirmation</text>
+  </g>
+  <path d="M 410 977 L 410 1004" class="flow-line" />
+
+  <!-- S7: Attend Event & Present QR -->
+  <g transform="translate(410, 1024)">
+    <rect x="-115" y="-19" width="230" height="38" class="shape-process" />
+    <text class="node-text">Attend Event &amp; Present QR</text>
+  </g>
+  <path d="M 410 1043 L 410 1070" class="flow-line" />
+
+  <!-- S8: Decision: Attendance Marked? -->
+  <g transform="translate(410, 1104)">
+    <polygon points="0,-33 92,0 0,33 -92,0" class="shape-decision" />
+    <text class="node-text-sm" y="-5">Attendance</text>
+    <text class="node-text-sm" y="8">Verified?</text>
+  </g>
+
+  <!-- S8 No Branch: Retry / Wait -->
+  <path d="M 318 1104 L 210 1104 L 210 1024 L 285 1024" class="flow-line" />
+  <text x="245" y="1094" class="branch-no">No</text>
+  <g transform="translate(210, 1065)">
+    <text class="node-text-sm" fill="#b91c1c">Wait / Scan Error</text>
+  </g>
+
+  <!-- S8 Yes Branch: Auto Generate Certificate -->
+  <path d="M 410 1137 L 410 1168" class="flow-line" />
+  <text x="420" y="1153" class="branch-yes">Yes</text>
+
+  <!-- S9: E-Certificate Generation (Doc Shape) -->
+  <g transform="translate(410, 1195)">
+    <path d="M -110,-22 L 110,-22 L 110,14 C 70,8 40,26 0,16 C -40,6 -70,26 -110,14 Z" class="shape-doc" />
+    <text class="node-text-sm" y="-4">Auto Generate &amp; Download</text>
+    <text class="node-text-sm" y="11">E-Certificate (PDF)</text>
+  </g>
+  <path d="M 410 1222 L 410 1252" class="flow-line" />
+
+  <!-- S10: Award Activity Points -->
+  <g transform="translate(410, 1272)">
+    <rect x="-115" y="-19" width="230" height="38" class="shape-process" />
+    <text class="node-text">Credit Engagement Points</text>
+  </g>
+  <path d="M 410 1291 L 410 1318" class="flow-line" />
+
+  <!-- S11: Community Feed & Gamification -->
+  <g transform="translate(410, 1338)">
+    <polygon points="-115,-19 125,-19 105,19 -135,19" class="shape-io" />
+    <text class="node-text">View Feed &amp; Leaderboard</text>
+  </g>
+  <path d="M 410 1357 L 410 1384" class="flow-line" />
+
+  <!-- S12: Feedback / Reactions -->
+  <g transform="translate(410, 1404)">
+    <rect x="-115" y="-19" width="230" height="38" class="shape-process" />
+    <text class="node-text">Submit Feedback &amp; React</text>
+  </g>
+
+
+  <!-- ================= LANE 2: COORDINATOR WORKFLOW (X = 1200) ================= -->
+  <!-- C1: Coordinator Dashboard -->
+  <g transform="translate(1200, 595)">
+    <rect x="-115" y="-20" width="230" height="40" class="shape-process" />
+    <text class="node-text">Coordinator Dashboard</text>
+  </g>
+  <path d="M 1200 615 L 1200 642" class="flow-line" />
+
+  <!-- C2: Create New Event -->
+  <g transform="translate(1200, 662)">
+    <polygon points="-110,-19 120,-19 100,19 -130,19" class="shape-io" />
+    <text class="node-text">Create Event &amp; Schedule</text>
+  </g>
+  <path d="M 1200 681 L 1200 708" class="flow-line" />
+
+  <!-- C3: Decision: Requires Admin Approval? -->
+  <g transform="translate(1200, 742)">
+    <polygon points="0,-33 92,0 0,33 -92,0" class="shape-decision" />
+    <text class="node-text-sm" y="-5">Admin Approval</text>
+    <text class="node-text-sm" y="8">Required?</text>
+  </g>
+
+  <!-- C3 Yes Branch: Send for Review -->
+  <path d="M 1292 742 L 1435 742 L 1435 780" class="flow-line" />
+  <text x="1320" y="732" class="branch-yes">Yes</text>
+  <g transform="translate(1435, 800)">
+    <rect x="-70" y="-17" width="140" height="34" class="shape-process" />
+    <text class="node-text-sm">Submit for Review</text>
+  </g>
+
+  <!-- Link C3 submission to Admin Lane via dashed line -->
+  <path d="M 1505 800 L 1870 800 L 1870 728 L 1880 728" class="flow-line-dashed" />
+  <text x="1650" y="790" class="node-text-sm" fill="#6366f1">Event Approval Pipeline</text>
+
+  <!-- C3 No Branch: Direct Publish -->
+  <path d="M 1200 775 L 1200 828" class="flow-line" />
+  <text x="1210" y="795" class="branch-no">No (Pre-approved)</text>
+
+  <!-- C4: Publish Event -->
+  <g transform="translate(1200, 848)">
+    <rect x="-105" y="-19" width="210" height="38" class="shape-process" />
+    <text class="node-text">Publish Event Live</text>
+  </g>
+  <path d="M 1200 867 L 1200 895" class="flow-line" />
+
+  <!-- C5: Manage Registrations -->
+  <g transform="translate(1200, 915)">
+    <polygon points="-110,-19 120,-19 100,19 -130,19" class="shape-io" />
+    <text class="node-text">Monitor Registered Students</text>
+  </g>
+  <path d="M 1200 934 L 1200 962" class="flow-line" />
+
+  <!-- C6: Launch In-App QR Scanner -->
+  <g transform="translate(1200, 982)">
+    <rect x="-115" y="-19" width="230" height="38" class="shape-process" />
+    <text class="node-text">Launch Camera QR Scanner</text>
+  </g>
+  <path d="M 1200 1001 L 1200 1029" class="flow-line" />
+
+  <!-- C7: Scan Student QR Code -->
+  <g transform="translate(1200, 1049)">
+    <polygon points="-110,-19 120,-19 100,19 -130,19" class="shape-io" />
+    <text class="node-text">Scan Student Ticket QR</text>
+  </g>
+  <path d="M 1200 1068 L 1200 1096" class="flow-line" />
+
+  <!-- C8: Decision: Valid & Unused QR? -->
+  <g transform="translate(1200, 1130)">
+    <polygon points="0,-33 92,0 0,33 -92,0" class="shape-decision" />
+    <text class="node-text-sm" y="-5">Valid Ticket &amp;</text>
+    <text class="node-text-sm" y="8">Not Scanned?</text>
+  </g>
+
+  <!-- C8 No Branch: Reject Duplicate / Invalid Scan -->
+  <path d="M 1108 1130 L 980 1130 L 980 1049 L 1075 1049" class="flow-line" />
+  <text x="1030" y="1120" class="branch-no">No</text>
+  <g transform="translate(980, 1090)">
+    <rect x="-65" y="-15" width="130" height="30" class="shape-io" />
+    <text class="node-text-sm" fill="#b91c1c">Duplicate / Error</text>
+  </g>
+
+  <!-- C8 Yes Branch: Mark Attendance -->
+  <path d="M 1200 1163 L 1200 1195" class="flow-line" />
+  <text x="1210" y="1180" class="branch-yes">Yes</text>
+
+  <!-- C9: Validate Attendance Record -->
+  <g transform="translate(1200, 1215)">
+    <rect x="-115" y="-19" width="230" height="38" class="shape-process" />
+    <text class="node-text">Record Attendance &amp; Time</text>
+  </g>
+  <path d="M 1200 1234 L 1200 1262" class="flow-line" />
+
+  <!-- C10: Trigger Batch Certificate Issuance -->
+  <g transform="translate(1200, 1282)">
+    <rect x="-115" y="-19" width="230" height="38" class="shape-process" />
+    <text class="node-text">Trigger Cert Generation</text>
+  </g>
+  <path d="M 1200 1301 L 1200 1332" class="flow-line" />
+
+  <!-- C11: Export Attendance & Analytics (Doc Shape) -->
+  <g transform="translate(1200, 1358)">
+    <path d="M -110,-22 L 110,-22 L 110,14 C 70,8 40,26 0,16 C -40,6 -70,26 -110,14 Z" class="shape-doc" />
+    <text class="node-text-sm" y="-4">Export Attendance Report</text>
+    <text class="node-text-sm" y="11">&amp; Summary (CSV/PDF)</text>
+  </g>
+
+
+  <!-- ================= LANE 3: ADMINISTRATOR WORKFLOW (X = 1980) ================= -->
+  <!-- A1: Admin Dashboard -->
+  <g transform="translate(1980, 595)">
+    <rect x="-115" y="-20" width="230" height="40" class="shape-process" />
+    <text class="node-text">Administrator Dashboard</text>
+  </g>
+  <path d="M 1980 615 L 1980 642" class="flow-line" />
+
+  <!-- A2: Central Management Modules -->
+  <g transform="translate(1980, 662)">
+    <polygon points="-110,-19 120,-19 100,19 -130,19" class="shape-io" />
+    <text class="node-text">Manage Users &amp; Roles</text>
+  </g>
+  <path d="M 1980 681 L 1980 708" class="flow-line" />
+
+  <!-- A3: Event Approval & Audit -->
+  <g transform="translate(1980, 728)">
+    <rect x="-110" y="-19" width="220" height="38" class="shape-process" />
+    <text class="node-text">Approve / Reject Events</text>
+  </g>
+  <path d="M 1980 747 L 1980 774" class="flow-line" />
+
+  <!-- A4: Community Moderation & Sentiment -->
+  <g transform="translate(1980, 794)">
+    <rect x="-115" y="-19" width="230" height="38" class="shape-process" />
+    <text class="node-text">Community Post Moderation</text>
+  </g>
+  <path d="M 1980 813 L 1980 840" class="flow-line" />
+
+  <!-- A5: Gamification & Points Configuration -->
+  <g transform="translate(1980, 860)">
+    <polygon points="-110,-19 120,-19 100,19 -130,19" class="shape-io" />
+    <text class="node-text">Badge &amp; Points Rules</text>
+  </g>
+  <path d="M 1980 879 L 1980 906" class="flow-line" />
+
+  <!-- A6: System Security & Activity Logs -->
+  <g transform="translate(1980, 926)">
+    <rect x="-115" y="-19" width="230" height="38" class="shape-process" />
+    <text class="node-text">Security Audit &amp; Logs</text>
+  </g>
+  <path d="M 1980 945 L 1980 976" class="flow-line" />
+
+  <!-- A7: System-Wide Analytics & Reports (Doc Shape) -->
+  <g transform="translate(1980, 1002)">
+    <path d="M -110,-22 L 110,-22 L 110,14 C 70,8 40,26 0,16 C -40,6 -70,26 -110,14 Z" class="shape-doc" />
+    <text class="node-text-sm" y="-4">Generate Department</text>
+    <text class="node-text-sm" y="11">Analytics &amp; NAAC Reports</text>
+  </g>
+
+
+  <!-- ================= RELATIONAL DATABASE & AI SERVICES (IN ADMIN LANE) ================= -->
+  <!-- Central Database Cylinder in Admin Lane Lower Area -->
+  <g transform="translate(1810, 1260)">
+    <path d="M -70,-26 A 70 14 0 0 1 70 -26 L 70 26 A 70 14 0 0 1 -70 26 Z" class="shape-db" />
+    <ellipse cx="0" cy="-26" rx="70" ry="14" fill="#93C5FD" stroke="#1e293b" stroke-width="2.2" />
+    <text class="node-text-bold" y="-4">ITSA Database</text>
+    <text class="node-text-sm" y="13">(MySQL Relational)</text>
+    <!-- DB schema items -->
+    <text class="node-text-sm" y="50" fill="#475569">• Users &amp; RBAC Roles</text>
+    <text class="node-text-sm" y="68" fill="#475569">• Events &amp; Registrations</text>
+    <text class="node-text-sm" y="86" fill="#475569">• QR Tokens &amp; Attendance</text>
+    <text class="node-text-sm" y="104" fill="#475569">• Certificates &amp; Badges</text>
+    <text class="node-text-sm" y="122" fill="#475569">• Posts, Likes &amp; Feedback</text>
+  </g>
+
+  <!-- AI Engine Box in Admin Lane Lower Area -->
+  <g transform="translate(2130, 1260)">
+    <rect x="-95" y="-55" width="190" height="215" class="shape-ai" />
+    <text class="node-text-bold" y="-30" fill="#6d28d9">🤖 AI ENGINE</text>
+    <line x1="-75" y1="-14" x2="75" y2="-14" stroke="#c4b5fd" stroke-width="1.5" />
+    <text class="node-text-sm" y="10" fill="#4c1d95">• Smart Event Recs</text>
+    <text class="node-text-sm" y="32" fill="#4c1d95">• Sentiment Analysis</text>
+    <text class="node-text-sm" y="54" fill="#4c1d95">• Engagement Prediction</text>
+    <text class="node-text-sm" y="76" fill="#4c1d95">• Content Moderation</text>
+    <text class="node-text-sm" y="98" fill="#4c1d95">• Duplicate Scan Guard</text>
+    <text class="node-text-sm" y="120" fill="#4c1d95">• Auto Notifications</text>
+  </g>
+
+  <!-- Connectors between DB & AI Engine -->
+  <path d="M 1880 1260 L 2035 1260" class="flow-line-dashed" />
+  <path d="M 2035 1276 L 1880 1276" class="flow-line-dashed" />
+
+  <!-- Data Flow between Coordinator and Database -->
+  <path d="M 1315 1215 L 1740 1245" class="flow-line-dashed" />
+
+
+  <!-- ================= UNIFIED TERMINATION: LOGOUT -> END ================= -->
+  <!-- Session Logout Process Shape -->
+  <g transform="translate(1200, 1630)">
+    <polygon points="-120,-20 140,-20 120,20 -140,20" class="shape-io" />
+    <text class="node-text-bold">Session Logout / Close</text>
+  </g>
+
+  <!-- Flow from Student Lane Bottom to Logout -->
+  <path d="M 410 1423 L 410 1630 L 1060 1630" class="flow-line" />
+
+  <!-- Flow from Coordinator Lane Bottom to Logout -->
+  <path d="M 1200 1380 L 1200 1608" class="flow-line" />
+
+  <!-- Flow from Admin Lane Bottom to Logout -->
+  <path d="M 1980 1024 L 1980 1520 L 1400 1520 L 1400 1630 L 1340 1630" class="flow-line" />
+
+  <!-- Logout to END Node (Pink Oval) -->
+  <path d="M 1200 1650 L 1200 1685" class="flow-line" />
+
+  <!-- End Node -->
+  <g transform="translate(1200, 1715)">
+    <ellipse cx="0" cy="0" rx="90" ry="24" class="shape-start-end" />
+    <text class="node-text-bold">End</text>
+  </g>
+
+</svg>
+'''
+
+def main():
+    base_dir = r"C:\Users\ritik\.gemini\antigravity\scratch\itsa-platform"
+    docs_dir = os.path.join(base_dir, "docs")
+    os.makedirs(docs_dir, exist_ok=True)
+    
+    svg_path1 = os.path.join(docs_dir, "flowchart.svg")
+    svg_path2 = os.path.join(docs_dir, "ITSA_System_Flowchart.svg")
+    svg_path_root = os.path.join(base_dir, "ITSA_System_Flowchart.svg")
+    html_path = os.path.join(docs_dir, "flowchart_render.html")
+    png_path = os.path.join(docs_dir, "ITSA_System_Flowchart.png")
+    png_path_root = os.path.join(base_dir, "ITSA_System_Flowchart.png")
+    
+    for p in [svg_path1, svg_path2, svg_path_root]:
+        with open(p, "w", encoding="utf-8") as f:
+            f.write(SVG_CONTENT)
+        
+    print(f"Updated SVG files.")
+    
+    html_content = f'''<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body {{ margin: 0; padding: 0; background: #ffffff; display: flex; justify-content: center; align-items: center; }}
+  svg {{ width: 2400px; height: 1780px; }}
+</style>
+</head>
+<body>
+{SVG_CONTENT}
+</body>
+</html>'''
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+        
+    edge_cmd = [
+        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+        "--headless",
+        "--disable-gpu",
+        "--force-device-scale-factor=1",
+        "--window-size=2400,1780",
+        f"--screenshot={png_path}",
+        f"file:///{html_path.replace(os.sep, '/')}"
+    ]
+    try:
+        subprocess.run(edge_cmd, check=True, timeout=20)
+        print(f"Generated PNG: {png_path}")
+        if os.path.exists(png_path):
+            with open(png_path, "rb") as rf, open(png_path_root, "wb") as wf:
+                wf.write(rf.read())
+            print(f"Copied PNG to root: {png_path_root}")
+    except Exception as e:
+        print(f"Error rendering PNG with Edge: {e}")
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,194 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Feedback Center{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item active">Feedback Center</li>
+{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold mb-1">Student Feedback Center</h4>
+        <p class="text-muted small mb-0">Monitor student ratings, post-event satisfaction reviews, and continuous improvement metrics</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('api_admin.export_report_csv', report_type='feedback') }}" class="btn btn-outline-primary btn-sm fw-semibold">
+            <i class="bi bi-download me-1"></i> Export Feedback CSV
+        </a>
+    </div>
+</div>
+
+<!-- Metrics Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="card card-itsa p-3 h-100 shadow-sm border-0">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-3 fs-4">
+                    <i class="bi bi-chat-square-quote"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Total Submissions</div>
+                    <div class="h3 fw-bold mb-0 text-dark">{{ metrics.total_count }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card card-itsa p-3 h-100 shadow-sm border-0">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-warning bg-opacity-10 text-warning p-3 rounded-3 fs-4">
+                    <i class="bi bi-star-fill"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Average Rating</div>
+                    <div class="h3 fw-bold mb-0 text-dark">
+                        {{ metrics.avg_rating }} <span class="fs-6 text-muted">/ 5.0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card card-itsa p-3 h-100 shadow-sm border-0">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-success bg-opacity-10 text-success p-3 rounded-3 fs-4">
+                    <i class="bi bi-emoji-smile"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Satisfaction Rate</div>
+                    <div class="h3 fw-bold mb-0 text-success">{{ metrics.satisfaction_rate }}%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card card-itsa p-3 h-100 shadow-sm border-0">
+            <div class="d-flex flex-column justify-content-center h-100">
+                <div class="text-muted small mb-1">Aspect Breakdown</div>
+                <div class="d-flex justify-content-between small text-muted">
+                    <span>Speaker: <b>{{ metrics.avg_speaker_rating }}</b></span>
+                    <span>Org: <b>{{ metrics.avg_organization_rating }}</b></span>
+                    <span>Content: <b>{{ metrics.avg_content_rating }}</b></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Card -->
+<div class="card card-itsa p-3 mb-4 shadow-sm border-0">
+    <form method="GET" action="{{ url_for('pages.admin_feedback') }}" class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label small text-muted mb-1">Filter by Event</label>
+            <select name="event_id" class="form-select form-select-sm">
+                <option value="">All Events</option>
+                {% for ev in events %}
+                <option value="{{ ev.id }}" {% if selected_event_id == ev.id %}selected{% endif %}>{{ ev.title }} ({{ ev.status }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small text-muted mb-1">Rating</label>
+            <select name="rating" class="form-select form-select-sm">
+                <option value="">All Ratings</option>
+                <option value="5" {% if selected_rating == 5 %}selected{% endif %}>⭐⭐⭐⭐⭐ (5 Stars)</option>
+                <option value="4" {% if selected_rating == 4 %}selected{% endif %}>⭐⭐⭐⭐ (4 Stars)</option>
+                <option value="3" {% if selected_rating == 3 %}selected{% endif %}>⭐⭐⭐ (3 Stars)</option>
+                <option value="2" {% if selected_rating == 2 %}selected{% endif %}>⭐⭐ (2 Stars)</option>
+                <option value="1" {% if selected_rating == 1 %}selected{% endif %}>⭐ (1 Star)</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small text-muted mb-1">From Date</label>
+            <input type="date" name="start_date" class="form-control form-control-sm" value="{{ start_date or '' }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small text-muted mb-1">To Date</label>
+            <input type="date" name="end_date" class="form-control form-control-sm" value="{{ end_date or '' }}">
+        </div>
+        <div class="col-md-2 d-flex gap-1">
+            <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                <i class="bi bi-funnel"></i> Apply
+            </button>
+            <a href="{{ url_for('pages.admin_feedback') }}" class="btn btn-light btn-sm border" title="Reset Filters">
+                <i class="bi bi-x-circle"></i>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Feedback Table -->
+<div class="card card-itsa overflow-hidden shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">Student</th>
+                    <th>Event</th>
+                    <th>Overall Rating</th>
+                    <th>Aspects</th>
+                    <th>Comments & Suggestions</th>
+                    <th class="text-end pe-4">Submitted</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if feedbacks %}
+                    {% for fb in feedbacks %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark">{{ fb.user.full_name }}</div>
+                            <div class="small text-muted">{{ fb.user.email }}</div>
+                            {% if fb.user.student_profile %}
+                            <div class="badge bg-light text-muted border" style="font-size: 0.7rem;">
+                                {{ fb.user.student_profile.department }} &bull; Yr {{ fb.user.student_profile.year_of_study }}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('pages.event_detail', event_id=fb.event_id) }}" class="fw-semibold text-decoration-none text-primary">
+                                {{ fb.event.title }}
+                            </a>
+                            <div class="small text-muted">{{ fb.event.category.name if fb.event.category else 'Event' }}</div>
+                        </td>
+                        <td>
+                            <div class="text-warning">
+                                {% for i in range(fb.rating) %}<i class="bi bi-star-fill"></i>{% endfor %}
+                                {% for i in range(5 - fb.rating) %}<i class="bi bi-star text-muted text-opacity-25"></i>{% endfor %}
+                            </div>
+                            <span class="small fw-bold text-dark">{{ fb.rating }} / 5</span>
+                        </td>
+                        <td class="small text-muted">
+                            <div>Speaker: <span class="fw-semibold text-dark">{{ fb.speaker_rating or '-' }}/5</span></div>
+                            <div>Org: <span class="fw-semibold text-dark">{{ fb.organization_rating or '-' }}/5</span></div>
+                            <div>Content: <span class="fw-semibold text-dark">{{ fb.content_rating or '-' }}/5</span></div>
+                        </td>
+                        <td style="max-width: 320px;">
+                            {% if fb.content %}
+                            <div class="small text-dark mb-1"><b>Comment:</b> {{ fb.content }}</div>
+                            {% endif %}
+                            {% if fb.suggestions %}
+                            <div class="small text-muted"><em>Suggestions:</em> {{ fb.suggestions }}</div>
+                            {% endif %}
+                            {% if not fb.content and not fb.suggestions %}
+                            <span class="text-muted small">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4 small text-muted">
+                            {{ fb.submitted_at.strftime('%b %d, %Y') }}<br>
+                            <span class="font-mono text-xs">{{ fb.submitted_at.strftime('%I:%M %p') }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-chat-square-text fs-2 d-block mb-2 text-secondary"></i>
+                            No feedback records matching the criteria.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

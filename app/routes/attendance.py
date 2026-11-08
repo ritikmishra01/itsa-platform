@@ -1,5 +1,7 @@
-﻿from flask import Blueprint, request
+from flask import Blueprint, request
 from flask_login import login_required, current_user
+from app.extensions import db
+from app.models.attendance import Attendance
 from app.services.attendance_service import AttendanceService
 from app.utils.responses import success_response, error_response
 from app.utils.decorators import coordinator_required, admin_required
@@ -28,10 +30,14 @@ def scan_attendance():
             ticket_code=ticket_code.strip(),
             notes=notes
         )
-        return success_response(attendance.to_dict(), f"Attendance confirmed for {attendance.student.full_name} (+10 points).")
+        data = attendance.to_dict()
+        data['total_attendances'] = Attendance.query.filter_by(event_id=int(event_id)).count()
+        return success_response(data, f"Attendance marked successfully for {attendance.student.full_name} (+10 points).")
     except ValueError as e:
+        db.session.rollback()
         return error_response("ATT_SCAN_FAILED", str(e), 400)
     except Exception as e:
+        db.session.rollback()
         return error_response("SYS_ERROR", f"Attendance error: {str(e)}", 500)
 
 

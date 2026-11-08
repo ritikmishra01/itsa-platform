@@ -24,8 +24,22 @@ def normalize_database_url(raw_url=None, base_dir=None):
     if raw_url is None:
         raw_url = os.environ.get('DATABASE_URL')
 
+    require_shared = os.environ.get('SHARED_DATABASE', 'False').lower() in ('true', '1') or \
+                     os.environ.get('REQUIRE_SHARED_DB', 'False').lower() in ('true', '1') or \
+                     os.environ.get('FLASK_ENV') == 'production'
+
+    if require_shared:
+        if not raw_url or not str(raw_url).strip() or str(raw_url).strip().startswith('sqlite:'):
+            raise ValueError(
+                "Central PostgreSQL DATABASE_URL is required when SHARED_DATABASE=True or FLASK_ENV=production. "
+                "Refusing to fall back to local SQLite to prevent silent database fragmentation."
+            )
+
     if not raw_url or not str(raw_url).strip():
-        # Fallback to local SQLite database
+        # Default to instance SQLite database if present, otherwise base directory
+        inst_db = os.path.join(base_dir, 'instance', 'itsa_platform.db')
+        if os.path.exists(inst_db):
+            return f"sqlite:///{inst_db}"
         return f"sqlite:///{os.path.join(base_dir, 'itsa_platform.db')}"
 
     url = str(raw_url).strip()
@@ -126,6 +140,33 @@ class Config:
     POINTS_POST = int(os.environ.get('POINTS_POST', 2))
     POINTS_COMMENT = int(os.environ.get('POINTS_COMMENT', 1))
     POINTS_VOLUNTEER = int(os.environ.get('POINTS_VOLUNTEER', 15))
+
+    # ── Certificate / College Branding ─────────────────────────────────────────
+    # These values are printed on every generated PDF certificate.
+    # Override any of them in your .env file without touching code.
+    COLLEGE_NAME     = os.environ.get('COLLEGE_NAME',
+                                      'SHREE L. R. TIWARI COLLEGE OF ENGINEERING')
+    COLLEGE_TAGLINE  = os.environ.get(
+        'COLLEGE_TAGLINE',
+        'Autonomous Institute, Affiliated to University of Mumbai | '
+        'Approved by AICTE & DTE, Maharashtra State | NAAC Accredited | '
+        'NBA Accredited Program | ISO 9001:2015 Certified | DTE Code No: 3423 | '
+        'Recognized under Section 2(f) of the UGC Act 1956 | '
+        'Minority Status (Hindi Linguistic)'
+    )
+    # Absolute path OR path relative to the project root.
+    # If empty or file not found, a decorative placeholder crest is drawn instead.
+    COLLEGE_LOGO_PATH = os.environ.get('COLLEGE_LOGO_PATH', '')
+
+    # Signatory display names shown under the signature lines on the certificate.
+    CERT_SIGN_COORD       = os.environ.get('CERT_SIGN_COORD',       'Mr. Manthan Joshi')
+    CERT_SIGN_COORD_TITLE = os.environ.get('CERT_SIGN_COORD_TITLE', 'Technical Coordinator, SLRTCE')
+    CERT_SIGN_DEAN        = os.environ.get('CERT_SIGN_DEAN',        'Ms. Saumya Philip')
+    CERT_SIGN_DEAN_TITLE  = os.environ.get('CERT_SIGN_DEAN_TITLE',  'Dean – SWDC')
+    CERT_SIGN_PRINCIPAL   = os.environ.get('CERT_SIGN_PRINCIPAL',   'Prof. Dr. Umesh S. Bhadade')
+    CERT_SIGN_PRINCIPAL_TITLE = os.environ.get('CERT_SIGN_PRINCIPAL_TITLE', 'Principal, SLRTCE')
+    CERT_SIGN_SECRETARY   = os.environ.get('CERT_SIGN_SECRETARY',   'SECRETARY\nRAHUL EDUCATION')
+    # ──────────────────────────────────────────────────────────────────────────
 
 
 class DevelopmentConfig(Config):

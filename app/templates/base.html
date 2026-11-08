@@ -4,65 +4,76 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}ITSA Platform{% endblock %} | Information Technology Students' Association</title>
-  
+
+  {# ✅ Favicon (navy IT square) #}
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230f2744'/><text x='50' y='68' font-size='60' text-anchor='middle' fill='white' font-family='Inter,sans-serif' font-weight='bold'>IT</text></svg>">
+
+  {# ✅ Theme init (safe against blocked localStorage) #}
   <script>
     (function() {
       try {
-        var t = localStorage.getItem("itsa-theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        var t = localStorage.getItem("itsa-theme")
+          || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
         document.documentElement.setAttribute("data-bs-theme", t);
-      } catch(e) {}
+      } catch(e) {
+        document.documentElement.setAttribute("data-bs-theme", "light");
+      }
     })();
   </script>
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/bootstrap-icons.min.css') }}">
+
   <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/events.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/search.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-  
+
   {% block extra_head %}{% endblock %}
 </head>
 
 <body data-user-role="{% if current_user.is_authenticated %}{{ current_user.role }}{% else %}GUEST{% endif %}">
   <a href="#app-content" class="visually-hidden-focusable p-3 bg-primary text-white position-absolute z-3">Skip to main content</a>
-  
+
 {% if current_user.is_authenticated %}
+
+  {# ============ AUTHENTICATED — COMMAND CENTER SHELL ============ #}
   <div id="app-root">
-    <div class="sidebar-overlay" id="sidebar-overlay" onclick="ITSA.sidebar.close()"></div>
-    <aside id="app-sidebar" role="navigation" aria-label="Main Navigation">
-      {% include 'partials/sidebar.html' %}
-    </aside>
-    <div id="app-main">
-      <header id="app-topbar" role="banner">
-        {% include 'partials/topbar.html' %}
-      </header>
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          <div class="container-fluid px-4 pt-3">
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible alert-auto-dismiss fade show shadow-sm" role="alert" style="border-radius: var(--radius-md);">
-                <i class="bi bi-{% if category == 'success' %}check-circle{% elif category == 'danger' or category == 'error' %}x-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-              </div>
-            {% endfor %}
-          </div>
-        {% endif %}
-      {% endwith %}
-      <main id="app-content" role="main" tabindex="-1">
+
+    {% include 'partials/command-bar.html' %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="container-fluid" style="max-width: 1600px; margin: 0 auto; padding: var(--space-4) var(--space-8) 0;">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible alert-auto-dismiss fade show shadow-sm" role="alert" style="border-radius: var(--radius-md);">
+              <i class="bi bi-{% if category == 'success' %}check-circle{% elif category == 'danger' or category == 'error' %}x-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <main id="app-main" role="main" tabindex="-1">
+      <div id="app-content">
+        <div class="content-grid {% block grid_class %}no-panel{% endblock %}">
+          <div class="content-main">
+
 {% else %}
+
+  {# ============ GUEST — PUBLIC NAVBAR SHELL ============ #}
   <nav class="navbar navbar-expand-lg sticky-top" style="background: var(--surface-card); border-bottom: 1px solid var(--border-subtle); height: var(--topbar-height);">
     <div class="container">
       <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('pages.home') }}">
-        <div class="sidebar-logo">
-          <i class="bi bi-cpu-fill"></i>
-        </div>
+        <div class="sidebar-logo"><i class="bi bi-cpu-fill"></i></div>
         <span style="font-weight: 700; font-size: 1.05rem; color: var(--text-primary);">ITSA <span class="badge" style="background: var(--brand-gradient); font-size: 0.65rem; border-radius: var(--radius-full); padding: 3px 7px;">AI</span></span>
       </a>
       <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#publicNavbar" aria-controls="publicNavbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -75,13 +86,14 @@
           <li class="nav-item"><a class="nav-link fw-medium" href="{{ url_for('pages.verify_certificate_page') }}" style="color: var(--text-secondary);"><i class="bi bi-patch-check me-1"></i> Verify Certificate</a></li>
         </ul>
         <div class="d-flex align-items-center gap-2">
-          <button class="topbar-icon-btn btn border-0" data-theme-toggle aria-label="Switch to dark mode" type="button"><i class="bi bi-moon-stars"></i></button>
+          <button class="topbar-icon-btn btn border-0" data-theme-toggle aria-label="Switch theme" type="button"><i class="bi bi-moon-stars"></i></button>
           <a href="{{ url_for('pages.login_page') }}" class="btn btn-ghost btn-sm">Sign In</a>
           <a href="{{ url_for('pages.register_page') }}" class="btn btn-brand btn-sm">Get Started</a>
         </div>
       </div>
     </div>
   </nav>
+
   <div class="container mt-3">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -94,17 +106,53 @@
       {% endif %}
     {% endwith %}
   </div>
+
   <main role="main" class="py-4">
+
 {% endif %}
 
+        {# ============ SINGLE content BLOCK (used by both shells) ============ #}
         {% block content %}{% endblock %}
 
 {% if current_user.is_authenticated %}
-      </main>
+
+          </div>{# /.content-main #}
+
+          {% block context_panel %}
+          {% endblock %}
+
+        </div>{# /.content-grid #}
+      </div>{# /#app-content #}
+    </main>
+
+    {# Floating Actions #}
+    <div class="floating-actions">
+      <button class="floating-btn" aria-label="Chat" type="button" data-itsa-chat>
+        <i class="bi bi-chat-dots"></i>
+      </button>
+      <a href="{{ url_for('pages.notifications_page') }}" class="floating-btn" aria-label="Notifications" data-itsa-notifications>
+        <i class="bi bi-bell"></i>
+        {% if unread_notifications_count and unread_notifications_count > 0 %}
+          <span class="notification-badge">{{ unread_notifications_count }}</span>
+        {% endif %}
+      </a>
+      <a href="{{ url_for('pages.events_page') }}" class="floating-btn primary" aria-label="Browse Events" data-itsa-create>
+        <i class="bi bi-plus-lg"></i>
+      </a>
     </div>
-  </div>
+
+    {# Mobile Nav Drawer #}
+    <div class="mobile-nav-backdrop" id="mobile-nav-backdrop"></div>
+    <aside class="mobile-nav-drawer" id="mobile-nav-drawer" role="navigation" aria-label="Mobile Navigation">
+      {% include 'partials/mobile-nav.html' ignore missing %}
+    </aside>
+
+  </div>{# /#app-root #}
+
 {% else %}
+
   </main>
+
   <footer style="background: var(--surface-card); border-top: 1px solid var(--border-subtle); padding: var(--space-8) 0; margin-top: var(--space-16);">
     <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
       <div class="d-flex align-items-center gap-2">
@@ -119,12 +167,15 @@
       </div>
     </div>
   </footer>
+
 {% endif %}
 
   <div id="toast-container" role="region" aria-label="Notifications" aria-live="polite"></div>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+
+  <script src="{{ url_for('static', filename='vendor/js/bootstrap.bundle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/js/chart.umd.min.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/command-bar.js') }}"></script>
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   {% block extra_scripts %}{% endblock %}

@@ -1,8 +1,8 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}My Attendance History{% endblock %}
 
 {% block content %}
-<div class="container py-2">
+<div class="container-fluid p-0">
     <h2 class="fw-bold mb-1">Attendance History</h2>
     <p class="text-muted small mb-4">Official record of all ITSA events you have attended and checked in</p>
 
@@ -14,26 +14,44 @@
                         <th class="ps-4">Event Name</th>
                         <th>Category</th>
                         <th>Scan Timestamp</th>
-                        <th>Verified By Coordinator</th>
+                        <th>Verified By</th>
                         <th>Status</th>
-                        <th class="text-end pe-4">Points Awarded</th>
+                        <th>Points</th>
+                        <th class="text-end pe-4">Event Feedback</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% if attendances %}
                         {% for att in attendances %}
                         <tr>
-                            <td class="ps-4 fw-semibold">{{ att.event.title }}</td>
+                            <td class="ps-4 fw-semibold">
+                                <a href="{{ url_for('pages.event_detail', event_id=att.event_id) }}" class="text-decoration-none text-dark">
+                                    {{ att.event.title }}
+                                </a>
+                            </td>
                             <td><span class="badge bg-light text-dark border">{{ att.event.category.name if att.event.category else 'General' }}</span></td>
                             <td>{{ att.scanned_at.strftime('%b %d, %Y - %I:%M %p') }}</td>
                             <td>{{ att.coordinator.full_name if att.coordinator else 'Lead Coordinator' }}</td>
                             <td><span class="badge bg-success">{{ att.status }}</span></td>
-                            <td class="text-end pe-4"><span class="badge bg-warning text-dark fw-bold">+10 pts</span></td>
+                            <td><span class="badge bg-warning text-dark fw-bold">+10 pts</span></td>
+                            <td class="text-end pe-4">
+                                {% if att.event_id in submitted_feedback_event_ids %}
+                                <a href="{{ url_for('pages.event_detail', event_id=att.event_id) }}#feedback-section" class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 text-decoration-none py-2 px-2">
+                                    <i class="bi bi-star-fill text-warning me-1"></i> Submitted &bull; View / Edit
+                                </a>
+                                {% elif att.event.status == 'COMPLETED' %}
+                                <a href="{{ url_for('pages.event_detail', event_id=att.event_id) }}#feedback-section" class="btn btn-sm btn-brand py-1 px-2" style="font-size: 0.75rem;">
+                                    <i class="bi bi-star me-1"></i> Give Feedback (+5 pts)
+                                </a>
+                                {% else %}
+                                <span class="badge bg-light text-muted border py-1 px-2" style="font-size: 0.75rem;">Event Ongoing</span>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                     {% else %}
                         <tr>
-                            <td colspan="6" class="text-center py-5 text-muted">
+                            <td colspan="7" class="text-center py-5 text-muted">
                                 <i class="bi bi-clock-history fs-2"></i>
                                 <div class="mt-2">No attendance records found yet.</div>
                             </td>
