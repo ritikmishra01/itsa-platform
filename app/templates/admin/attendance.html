@@ -38,6 +38,38 @@
     </div>
 </div>
 
+<!-- Event Filter Toolbar -->
+<div class="card card-itsa p-3 mb-4 shadow-sm border">
+    <form method="GET" action="{{ url_for('pages.admin_attendance') }}" class="row g-2 align-items-center">
+        <div class="col-md-8">
+            <select class="form-select form-select-sm" name="event_id" onchange="this.form.submit()">
+                <option value="">All Events (Overall Roster)</option>
+                {% for e in events %}
+                <option value="{{ e.id }}" {% if selected_event_id and selected_event_id|string == e.id|string %}selected{% endif %}>{{ e.title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                <i class="bi bi-funnel-fill me-1"></i> Filter by Event
+            </button>
+            {% if selected_event_id %}
+            <a href="{{ url_for('pages.admin_attendance') }}" class="btn btn-outline-secondary btn-sm" title="Clear Filter">
+                <i class="bi bi-arrow-counterclockwise me-1"></i> All Events
+            </a>
+            {% endif %}
+        </div>
+    </form>
+    {% if selected_event_id %}
+    <div class="d-flex align-items-center flex-wrap gap-2 mt-2 pt-2 border-top">
+        <span class="text-muted small">Filtered by:</span>
+        {% set sel_ev = (events|selectattr('id', 'equalto', selected_event_id)|first) %}
+        <span class="badge bg-light text-dark border">Event: {{ sel_ev.title if sel_ev else selected_event_id }}</span>
+        <a href="{{ url_for('pages.admin_attendance') }}" class="small text-danger ms-1 text-decoration-none">Clear filter</a>
+    </div>
+    {% endif %}
+</div>
+
 <!-- Attendance Records Table -->
 <div class="card card-itsa overflow-hidden shadow-sm">
     <div class="table-responsive">

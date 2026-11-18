@@ -172,6 +172,8 @@
 
   <div id="toast-container" role="region" aria-label="Notifications" aria-live="polite"></div>
 
+  {% block body_modals %}{% endblock %}
+
   <script src="{{ url_for('static', filename='vendor/js/bootstrap.bundle.min.js') }}"></script>
   <script src="{{ url_for('static', filename='vendor/js/chart.umd.min.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/theme.js') }}"></script>

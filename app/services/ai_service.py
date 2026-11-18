@@ -27,12 +27,15 @@ class AIService:
         try:
             from google import genai
             client = genai.Client(api_key=api_key)
-            models_to_try = [
-                current_app.config.get('GEMINI_MODEL', 'gemini-2.5-flash'),
+            cfg_model = current_app.config.get('GEMINI_MODEL', 'gemini-3.5-flash')
+            models_to_try = list(dict.fromkeys([
+                cfg_model,
+                'gemini-3.5-flash',
+                'gemini-3.5-flash-lite',
                 'gemini-2.5-flash',
                 'gemini-2.0-flash',
                 'gemini-1.5-flash'
-            ]
+            ]))
             for m in models_to_try:
                 try:
                     response = client.models.generate_content(
@@ -403,7 +406,7 @@ Return ONLY a JSON object with:
     @classmethod
     def predict_registrations(cls, event_id):
         """
-        Predicts turnout using category averages and capacity limits.
+        Predicts turnout using Scikit-learn Random Forest Regressor trained on historical event features.
         """
         event = Event.query.get_or_404(event_id)
 
@@ -415,21 +418,11 @@ Return ONLY a JSON object with:
 
         if similar_events:
             avg_regs = sum(e.current_registrations for e in similar_events) / len(similar_events)
-            predicted = int(avg_regs * 1.1) # 10% growth factor
         else:
-            predicted = 45 # baseline default
+            avg_regs = 50.0
 
-        if event.max_participants:
-            predicted = min(predicted, event.max_participants)
-
-        confidence_low = max(10, int(predicted * 0.8))
-        confidence_high = int(predicted * 1.25)
-        if event.max_participants:
-            confidence_high = min(confidence_high, event.max_participants)
-
-        return {
-            'predicted_count': predicted,
-            'confidence_range': [confidence_low, confidence_high],
-            'confidence': 'HIGH' if len(similar_events) >= 3 else 'MEDIUM',
-            'historical_events_analyzed': len(similar_events)
-        }
+        from app.ai.turnout_predictor import EventTurnoutPredictor
+        predictor = EventTurnoutPredictor.get_instance()
+        prediction = predictor.predict(event, historical_avg=avg_regs)
+        prediction['historical_events_analyzed'] = len(similar_events)
+        return prediction

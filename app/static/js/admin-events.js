@@ -385,5 +385,116 @@
     modal.classList.add('open');
   }
 
+  /* ============================================================
+     6. CREATE EVENT FORM & GEMINI AI GENERATION
+     ============================================================ */
+  const createForm = document.getElementById('createEventForm');
+  if (createForm) {
+    createForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const submitBtn = document.getElementById('btnSubmitCreateEvent') || createForm.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Creating...';
+      }
+
+      const formData = new FormData(createForm);
+      try {
+        const res = await fetch('/api/v1/events', {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          },
+          credentials: 'same-origin',
+          body: formData
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.success !== false) {
+          toast.success('Event Created', 'Event created successfully!');
+          const modalEl = document.getElementById('createEventModal');
+          if (modalEl && window.bootstrap && window.bootstrap.Modal) {
+            const inst = bootstrap.Modal.getInstance(modalEl);
+            if (inst) inst.hide();
+          }
+          setTimeout(() => window.location.reload(), 600);
+        } else {
+          const errMsg = data.error?.message || data.message || `HTTP ${res.status}`;
+          toast.error('Validation Error', errMsg);
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-plus-lg me-1"></i> Create Event';
+          }
+        }
+      } catch (err) {
+        console.error('Create event error:', err);
+        toast.error('Network Error', 'Failed to submit event to server.');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="bi bi-plus-lg me-1"></i> Create Event';
+        }
+      }
+    });
+  }
+
+  const btnAIGen = document.getElementById('btnAIGenDesc');
+  if (btnAIGen) {
+    btnAIGen.addEventListener('click', async function() {
+      const titleInput = document.getElementById('eventTitleInput');
+      const title = titleInput ? titleInput.value.trim() : '';
+      if (!title) {
+        toast.info('Title Required', 'Please enter an event title first to generate description.');
+        if (titleInput) titleInput.focus();
+        return;
+      }
+
+      btnAIGen.disabled = true;
+      btnAIGen.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating...';
+
+      const catSelect = document.getElementById('eventCategorySelect');
+      const catName = catSelect && catSelect.selectedIndex >= 0 ? catSelect.options[catSelect.selectedIndex].text : 'General';
+      const venueSelect = document.getElementById('eventVenueSelect');
+      const venueName = venueSelect && venueSelect.selectedIndex >= 0 ? venueSelect.options[venueSelect.selectedIndex].text : 'TBA';
+      const startInput = document.getElementById('eventStartDatetime');
+      const startVal = startInput && startInput.value ? startInput.value : 'Upcoming';
+
+      try {
+        const res = await fetch('/api/v1/ai/generate-description', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            title: title,
+            category_name: catName,
+            venue_name: venueName,
+            start_datetime: startVal
+          })
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.data && data.data.description) {
+          const descInput = document.getElementById('eventDescriptionInput');
+          if (descInput) {
+            descInput.value = data.data.description;
+          }
+          toast.success('AI Generated', 'Gemini AI generated description successfully.');
+        } else {
+          toast.error('AI Generation Failed', data.error?.message || data.message || 'Could not generate description.');
+        }
+      } catch (err) {
+        console.error('AI generation error:', err);
+        toast.error('Network Error', 'Could not reach AI service.');
+      } finally {
+        btnAIGen.disabled = false;
+        btnAIGen.innerHTML = '<i class="bi bi-magic me-1"></i> Generate with Gemini AI';
+      }
+    });
+  }
+
   console.log('✅ admin-events.js loaded');
 })();

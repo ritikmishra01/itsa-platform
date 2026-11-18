@@ -10,6 +10,7 @@ from app.routes.notifications import notifications_bp
 from app.routes.gamification import gamification_bp
 from app.routes.admin import admin_bp
 from app.routes.ai import ai_bp
+from app.routes.stories import stories_bp
 from app.routes.pages import pages_bp
 
 def register_routes(app):
@@ -26,3 +27,4 @@ def register_routes(app):
     app.register_blueprint(gamification_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(ai_bp)
+    app.register_blueprint(stories_bp)

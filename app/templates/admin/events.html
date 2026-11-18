@@ -31,7 +31,7 @@
     <button type="button" class="admin-btn admin-btn-ghost" data-bs-toggle="modal" data-bs-target="#filterModal">
       <i class="bi bi-funnel"></i> Filters
     </button>
-    <button type="button" class="admin-btn admin-btn-primary">
+    <button type="button" class="admin-btn admin-btn-primary" data-bs-toggle="modal" data-bs-target="#createEventModal">
       <i class="bi bi-plus-lg"></i> Create Event
     </button>
   </div>
@@ -65,6 +65,35 @@
     <input type="text" placeholder="Search events..." id="adminEventSearch" value="{{ search or '' }}">
   </div>
 </div>
+
+{% if cat_id or status_filter or search %}
+{# ============ ACTIVE FILTER PILLS ============ #}
+<div class="d-flex align-items-center flex-wrap gap-2 mb-3 px-1">
+  <span class="text-muted small fw-semibold"><i class="bi bi-funnel-fill me-1 text-primary"></i>Active Filters:</span>
+  {% if search %}
+  <span class="badge bg-light text-dark border px-2 py-1 rounded-pill d-inline-flex align-items-center gap-1">
+    <span>Query: <strong>{{ search }}</strong></span>
+    <a href="{{ url_for('pages.admin_events', category_id=cat_id, status=status_filter) }}" class="text-danger text-decoration-none ms-1">&times;</a>
+  </span>
+  {% endif %}
+  {% if cat_id %}
+  {% set current_cat = (categories|selectattr('id', 'equalto', cat_id|int)|first) %}
+  <span class="badge bg-light text-dark border px-2 py-1 rounded-pill d-inline-flex align-items-center gap-1">
+    <span>Category: <strong>{{ current_cat.name if current_cat else 'ID #' ~ cat_id }}</strong></span>
+    <a href="{{ url_for('pages.admin_events', search=search, status=status_filter) }}" class="text-danger text-decoration-none ms-1">&times;</a>
+  </span>
+  {% endif %}
+  {% if status_filter %}
+  <span class="badge bg-light text-dark border px-2 py-1 rounded-pill d-inline-flex align-items-center gap-1">
+    <span>Status: <strong>{{ status_filter }}</strong></span>
+    <a href="{{ url_for('pages.admin_events', search=search, category_id=cat_id) }}" class="text-danger text-decoration-none ms-1">&times;</a>
+  </span>
+  {% endif %}
+  <a href="{{ url_for('pages.admin_events') }}" class="btn btn-sm btn-link text-decoration-none text-muted py-0 px-1 small">
+    <i class="bi bi-x-circle me-1"></i>Clear all
+  </a>
+</div>
+{% endif %}
 
 {# ============ EVENTS TABLE ============ #}
 <div class="admin-table-card">
@@ -177,13 +206,174 @@
     <div class="admin-empty-icon">
       <i class="bi bi-calendar-x"></i>
     </div>
+    {% if cat_id or status_filter or search %}
+    <h3>No matching events found</h3>
+    <p>No events match the selected filter criteria. Try clearing or relaxing your filters.</p>
+    <a href="{{ url_for('pages.admin_events') }}" class="admin-btn admin-btn-ghost">
+      <i class="bi bi-arrow-counterclockwise"></i> Reset Filters
+    </a>
+    {% else %}
     <h3>No events yet</h3>
     <p>Create your first event to get started with ITSA scheduling.</p>
-    <button type="button" class="admin-btn admin-btn-primary">
+    <button type="button" class="admin-btn admin-btn-primary" data-bs-toggle="modal" data-bs-target="#createEventModal">
       <i class="bi bi-plus-lg"></i> Create First Event
     </button>
+    {% endif %}
   </div>
   {% endif %}
+</div>
+
+{% endblock %}
+
+{% block body_modals %}
+{# ============ FILTER MODAL ============ #}
+<div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="filterModalLabel"><i class="bi bi-funnel me-2 text-primary"></i>Filter Events</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="GET" action="{{ url_for('pages.admin_events') }}">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Search Keywords</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-search"></i></span>
+              <input type="text" class="form-control" name="search" value="{{ search or '' }}" placeholder="Search by title...">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Category</label>
+            <select class="form-select" name="category_id">
+              <option value="">All Categories</option>
+              {% for cat in categories %}
+              <option value="{{ cat.id }}" {% if cat_id and cat_id|string == cat.id|string %}selected{% endif %}>{{ cat.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Event Status</label>
+            <select class="form-select" name="status">
+              <option value="">All Statuses</option>
+              <option value="REGISTRATION_OPEN" {% if status_filter == 'REGISTRATION_OPEN' %}selected{% endif %}>REGISTRATION_OPEN</option>
+              <option value="PUBLISHED" {% if status_filter == 'PUBLISHED' %}selected{% endif %}>PUBLISHED</option>
+              <option value="ONGOING" {% if status_filter == 'ONGOING' %}selected{% endif %}>ONGOING</option>
+              <option value="COMPLETED" {% if status_filter == 'COMPLETED' %}selected{% endif %}>COMPLETED</option>
+              <option value="CANCELLED" {% if status_filter == 'CANCELLED' %}selected{% endif %}>CANCELLED</option>
+              <option value="DRAFT" {% if status_filter == 'DRAFT' %}selected{% endif %}>DRAFT</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer d-flex justify-content-between">
+          <a href="{{ url_for('pages.admin_events') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+          </a>
+          <div>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-funnel-fill me-1"></i> Apply Filters
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{# ============ CREATE EVENT MODAL ============ #}
+<div class="modal fade" id="createEventModal" tabindex="-1" aria-labelledby="createEventModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="createEventModalLabel"><i class="bi bi-calendar-plus me-2 text-primary"></i>Create New ITSA Event</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="createEventForm" enctype="multipart/form-data">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Event Title *</label>
+            <input type="text" class="form-control" name="title" id="eventTitleInput" required placeholder="e.g. AI & Cloud Architecture Summit 2026">
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Category *</label>
+              <select class="form-select" name="category_id" id="eventCategorySelect" required>
+                {% for c in categories %}
+                <option value="{{ c.id }}">{{ c.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Venue *</label>
+              <select class="form-select" name="venue_id" id="eventVenueSelect" required>
+                {% for v in venues %}
+                <option value="{{ v.id }}">{{ v.name }} (Cap: {{ v.capacity }})</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-2">
+              <label class="form-label small fw-semibold mb-0">Description *</label>
+              <button type="button" class="btn btn-sm btn-outline-primary py-0" id="btnAIGenDesc">
+                <i class="bi bi-magic me-1"></i> Generate with Gemini AI
+              </button>
+            </div>
+            <textarea class="form-control" name="description" id="eventDescriptionInput" rows="3" required placeholder="Event details, schedule, and expectations..."></textarea>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Start Date & Time *</label>
+              <input type="datetime-local" class="form-control" name="start_datetime" id="eventStartDatetime" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">End Date & Time *</label>
+              <input type="datetime-local" class="form-control" name="end_datetime" id="eventEndDatetime" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Registration Deadline *</label>
+              <input type="datetime-local" class="form-control" name="registration_deadline" id="eventRegDeadline" required>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Max Participants (Optional)</label>
+              <input type="number" class="form-control" name="max_participants" min="1" placeholder="Leave blank for unlimited">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Initial Status</label>
+              <select class="form-select" name="status">
+                <option value="REGISTRATION_OPEN" selected>REGISTRATION_OPEN</option>
+                <option value="PUBLISHED">PUBLISHED</option>
+                <option value="DRAFT">DRAFT</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Poster Image (Optional)</label>
+              <input type="file" class="form-control" name="poster_image" accept="image/*">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Tags (Comma-separated)</label>
+              <input type="text" class="form-control" name="tags" placeholder="e.g. Python, AI, Cloud, Workshop">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitCreateEvent">
+            <i class="bi bi-plus-lg me-1"></i> Create Event
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 {% endblock %}

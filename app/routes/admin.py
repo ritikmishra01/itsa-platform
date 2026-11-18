@@ -164,6 +164,8 @@ def unsuspend_user(user_id):
 
 
 @admin_bp.route('/coordinators', methods=['POST'])
+@admin_bp.route('/users/coordinator', methods=['POST'])
+@admin_bp.route('/users/coordinators', methods=['POST'])
 @admin_required
 def create_coordinator():
     data = request.get_json() if request.is_json else request.form.to_dict()

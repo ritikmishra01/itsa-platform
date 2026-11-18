@@ -80,18 +80,39 @@ document.getElementById('btnRunSentiment').addEventListener('click', async funct
 
 document.getElementById('btnRunPredict').addEventListener('click', async function() {
     const eventId = document.getElementById('aiPredictEventSelect').value;
-    if (!eventId) return;
+    if (!eventId) {
+        showToast('Please select an event first', 'warning');
+        return;
+    }
     this.disabled = true;
     this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Calculating ML regression...';
     try {
         const res = await apiCall(`/api/v1/ai/predict-registrations/${eventId}`, 'GET');
+        const factors = (res.data.factors_considered && res.data.factors_considered.length) 
+            ? res.data.factors_considered.join(' &bull; ') 
+            : 'Historical turnout patterns and venue capacity evaluated';
+        const rangeText = (res.data.confidence_range && res.data.confidence_range.length === 2)
+            ? `Estimated Range: <strong>${res.data.confidence_range[0]} &ndash; ${res.data.confidence_range[1]}</strong> students`
+            : '';
         document.getElementById('predictResult').innerHTML = `
-            <div class="fw-bold fs-5 text-primary mb-1">Predicted Turnout: ${res.data.predicted_registrations} students</div>
-            <div class="small text-muted mb-2">Confidence Level: <span class="badge bg-info text-dark">${res.data.confidence}</span></div>
-            <p class="mb-0 small">${res.data.factors_considered.join(' &bull; ')}</p>
+            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                <div class="fw-bold fs-5 text-primary">Predicted Turnout: ${res.data.predicted_registrations || res.data.predicted_count} students</div>
+                <span class="badge bg-primary-subtle text-primary border">${res.data.model_version || 'RandomForest'}</span>
+            </div>
+            <div class="small text-muted mb-2">
+                Confidence: <span class="badge bg-${res.data.confidence === 'HIGH' ? 'success' : (res.data.confidence === 'MEDIUM' ? 'info' : 'secondary')} text-white">${res.data.confidence}</span>
+                ${rangeText ? `&nbsp;&bull;&nbsp; ${rangeText}` : ''}
+            </div>
+            <div class="p-2 rounded bg-white border mt-2">
+                <div class="fw-semibold small text-dark mb-1"><i class="bi bi-sliders me-1"></i> Factors Evaluated:</div>
+                <div class="small text-muted">${factors}</div>
+            </div>
         `;
         showToast('Turnout prediction complete!', 'success');
     } catch(err) {
+        document.getElementById('predictResult').innerHTML = `
+            <div class="text-danger small"><i class="bi bi-exclamation-triangle-fill me-1"></i> ${err.message || 'Prediction failed. Ensure event details are valid.'}</div>
+        `;
     } finally {
         this.disabled = false;
         this.innerHTML = '<i class="bi bi-cpu me-1"></i> Predict Registration Attendance';

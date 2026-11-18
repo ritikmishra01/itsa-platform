@@ -450,6 +450,7 @@
     try {
       const devices = await Html5Qrcode.getCameras();
       availableCameras = devices || [];
+      const previousValue = cameraSelect.value;
       cameraSelect.innerHTML = '';
 
       if (availableCameras.length === 0) {
@@ -458,10 +459,17 @@
         opt.textContent = 'Auto-detect Camera';
         cameraSelect.appendChild(opt);
       } else {
+        if (availableCameras.length > 1) {
+          const autoOpt = document.createElement('option');
+          autoOpt.value = '';
+          autoOpt.textContent = 'Auto-detect Camera';
+          cameraSelect.appendChild(autoOpt);
+        }
         availableCameras.forEach((cam, idx) => {
           const opt = document.createElement('option');
           opt.value = cam.id;
           opt.textContent = cam.label || `Camera ${idx + 1}`;
+          if (cam.id === previousValue) opt.selected = true;
           cameraSelect.appendChild(opt);
         });
       }
@@ -472,21 +480,28 @@
     }
   }
 
-  function getTargetCameraConfig() {
+  function getCameraCandidates() {
+    const candidates = [];
     const selectedId = cameraSelect.value;
+
     if (selectedId) {
-      return { deviceId: { exact: selectedId } };
+      candidates.push(selectedId);
     }
+
     if (availableCameras.length > 0) {
       const backCam = availableCameras.find(c => /back|rear|environment/i.test(c.label));
-      if (backCam) {
-        cameraSelect.value = backCam.id;
-        return { deviceId: { exact: backCam.id } };
+      if (backCam && !candidates.includes(backCam.id)) {
+        candidates.push(backCam.id);
       }
-      cameraSelect.value = availableCameras[0].id;
-      return { deviceId: { exact: availableCameras[0].id } };
+      availableCameras.forEach(c => {
+        if (!candidates.includes(c.id)) candidates.push(c.id);
+      });
     }
-    return { facingMode: "environment" };
+
+    candidates.push({ facingMode: "user" });
+    candidates.push({ facingMode: "environment" });
+
+    return candidates;
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -506,23 +521,31 @@
     setStatus('initializing');
     ensureAudioContext();
 
-    // Query cameras if list is empty
-    if (availableCameras.length === 0) {
+    // 1. Explicitly request permission if camera list is not yet populated
+    if (availableCameras.length === 0 && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try {
-        await refreshCameraList();
-      } catch (e) {}
+        const permStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        permStream.getTracks().forEach(t => { try { t.stop(); } catch (e) {} });
+      } catch (permErr) {
+        console.warn('getUserMedia permission check:', permErr);
+        if (permErr && (permErr.name === 'NotAllowedError' || permErr.name === 'PermissionDeniedError')) {
+          btnStart.disabled = false;
+          btnStop.disabled = true;
+          setStatus('permission_required', { message: 'Camera permission was denied. Please allow camera access in your browser address bar.' });
+          return;
+        }
+      }
     }
 
-    const primaryTarget = getTargetCameraConfig();
-    const fallbackConfigs = [
-      primaryTarget,
-      { facingMode: "environment" },
-      { facingMode: "user" },
-      {}
-    ];
+    // 2. Enumerate cameras
+    try {
+      await refreshCameraList();
+    } catch (e) {}
 
+    const candidates = getCameraCandidates();
     let lastError = null;
-    for (const cameraConfig of fallbackConfigs) {
+
+    for (const cameraTarget of candidates) {
       try {
         if (scanner) {
           try { await scanner.clear(); } catch (e) {}
@@ -531,7 +554,7 @@
 
         scanner = new Html5Qrcode("qr-reader", { verbose: false });
         await scanner.start(
-          cameraConfig,
+          cameraTarget,
           SCAN_CONFIG,
           (decodedText) => {
             setStatus('detected', { code: decodedText });
@@ -545,14 +568,18 @@
         if (idleState) idleState.style.display = 'none';
         setStatus('ready');
 
+        if (typeof cameraTarget === 'string' && cameraSelect) {
+          cameraSelect.value = cameraTarget;
+        }
+
         // Re-enumerate cameras after permission has been granted so real device labels show up
         if (availableCameras.length === 0 || !availableCameras[0].label) {
-          refreshCameraList();
+          refreshCameraList().catch(() => {});
         }
         return;
       } catch (err) {
         lastError = err;
-        console.warn('Camera attempt failed with config:', cameraConfig, err);
+        console.warn('Camera attempt failed with target:', cameraTarget, err);
         if (scanner) {
           try { await scanner.clear(); } catch (e) {}
           scanner = null;
@@ -573,10 +600,10 @@
       setStatus('permission_required', { message: 'Camera permission was denied. Please allow camera access in your browser address bar.' });
     } else if (lastError && (lastError.name === 'NotFoundError' || errStr.includes('not found') || errStr.includes('devicesnotfound'))) {
       setStatus('error', { message: 'No camera found on this device. You can enter the ticket code manually below or upload a ticket image.' });
-    } else if (lastError && (lastError.name === 'NotReadableError' || errStr.includes('in use'))) {
-      setStatus('error', { message: 'Camera is currently in use by another application or browser tab.' });
+    } else if (lastError && (lastError.name === 'NotReadableError' || errStr.includes('in use') || errStr.includes('could not start video source'))) {
+      setStatus('error', { message: 'Camera is currently in use by another application or browser tab. Please close other camera apps and retry.' });
     } else {
-      setStatus('error', { message: (lastError && lastError.message) ? lastError.message : 'Could not initialize camera feed.' });
+      setStatus('error', { message: (lastError && lastError.message) ? lastError.message : 'Could not initialize camera feed. You can scan ticket images or enter code manually below.' });
     }
   }
 

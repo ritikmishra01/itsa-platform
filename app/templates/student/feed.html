@@ -1,10 +1,21 @@
 {% extends "base.html" %}
 {% block title %}Community Feed{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/stories.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid p-0">
   <div class="row justify-content-center">
     <div class="col-12 col-lg-8 col-xl-7">
+
+      {# ============ STORIES TRAY ============ #}
+      <div class="stories-card">
+        <div class="stories-tray" id="storiesTrayList">
+          <!-- Rendered dynamically by stories.js -->
+        </div>
+      </div>
 
       {# ============ POST CREATOR ============ #}
       <div class="social-composer mb-4">
@@ -214,6 +225,152 @@
 </div>
 {% endblock %}
 
+{% block body_modals %}
+{# ============ FULLSCREEN STORY VIEWER ============ #}
+<div class="story-viewer-modal" id="storyViewerModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="story-player-card">
+    <!-- Progress Bar Segments -->
+    <div class="story-progress-bar-container" id="storyProgressBarContainer"></div>
+
+    <!-- Viewer Top Header -->
+    <div class="story-viewer-header">
+      <div class="story-author-info">
+        <div class="story-author-avatar" id="storyAuthorAvatar"></div>
+        <div>
+          <span class="story-author-name" id="storyAuthorName"></span>
+          <span class="story-time-ago" id="storyTimeAgo"></span>
+        </div>
+      </div>
+      <button type="button" class="story-close-btn" id="closeStoryViewerBtn" aria-label="Close">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <!-- Media Display Area -->
+    <div class="story-media-display" id="storyMediaDisplay"></div>
+
+    <!-- Navigation Tap Zones -->
+    <div class="story-tap-zone left" id="storyTapZoneLeft" title="Previous story"></div>
+    <div class="story-tap-zone right" id="storyTapZoneRight" title="Next story"></div>
+
+    <!-- Footer Controls & Caption -->
+    <div class="story-viewer-footer">
+      <p class="story-caption-text" id="storyCaption" style="display: none;"></p>
+      <div class="story-author-controls" id="storyAuthorControls" style="display: none;">
+        <button type="button" class="story-views-pill" id="storyViewsPill">
+          <i class="bi bi-eye"></i>
+          <span><strong id="storyViewsCount">0</strong> views</span>
+        </button>
+        <button type="button" class="story-delete-btn" id="storyDeleteBtn" title="Delete Story">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ============ CREATE STORY MODAL ============ #}
+<div class="modal fade" id="createStoryModal" tabindex="-1" aria-labelledby="createStoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="createStoryModalLabel">
+          <i class="bi bi-plus-circle me-2 text-primary"></i>Create Story
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="createStoryForm" enctype="multipart/form-data">
+        <div class="modal-body">
+          <ul class="nav nav-pills nav-fill mb-3" id="storyTypeTabs" role="tablist">
+            <li class="nav-item">
+              <button class="nav-link active btn-sm" id="tab-media-story" data-bs-toggle="pill" data-bs-target="#pane-media-story" type="button">
+                <i class="bi bi-image me-1"></i> Photo / Video
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link btn-sm" id="tab-text-story" data-bs-toggle="pill" data-bs-target="#pane-text-story" type="button">
+                <i class="bi bi-fonts me-1"></i> Text Story
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content" id="storyTypeContent">
+            <!-- Media Story Pane -->
+            <div class="tab-pane fade show active" id="pane-media-story">
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Upload Image or Video (up to 15MB)</label>
+                <input type="file" class="form-control" name="media_file" id="storyFileInput" accept="image/*,video/*">
+                <div id="storyFilePreview" class="mt-2 text-center" style="display:none; background:#000; border-radius:8px; padding:6px;"></div>
+              </div>
+            </div>
+
+            <!-- Text Story Pane -->
+            <div class="tab-pane fade" id="pane-text-story">
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Story Text</label>
+                <textarea class="form-control" name="text_content" id="storyTextarea" rows="3" placeholder="What's on your mind?"></textarea>
+              </div>
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Background Theme</label>
+                <div class="gradient-picker-strip">
+                  <button type="button" class="gradient-preset-btn active" data-gradient="linear-gradient(135deg, #6366f1, #a855f7)" style="background: linear-gradient(135deg, #6366f1, #a855f7);"></button>
+                  <button type="button" class="gradient-preset-btn" data-gradient="linear-gradient(135deg, #f59e0b, #ef4444)" style="background: linear-gradient(135deg, #f59e0b, #ef4444);"></button>
+                  <button type="button" class="gradient-preset-btn" data-gradient="linear-gradient(135deg, #10b981, #06b6d4)" style="background: linear-gradient(135deg, #10b981, #06b6d4);"></button>
+                  <button type="button" class="gradient-preset-btn" data-gradient="linear-gradient(135deg, #ec4899, #8b5cf6)" style="background: linear-gradient(135deg, #ec4899, #8b5cf6);"></button>
+                  <button type="button" class="gradient-preset-btn" data-gradient="linear-gradient(135deg, #1e293b, #0f172a)" style="background: linear-gradient(135deg, #1e293b, #0f172a);"></button>
+                </div>
+              </div>
+              <div class="text-center p-3 rounded" id="textStoryPreviewCard" style="background: linear-gradient(135deg, #6366f1, #a855f7); color:#fff; min-height: 80px; display:flex; align-items:center; justify-content:center; font-weight:600;">
+                Type your message…
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <label class="form-label small fw-semibold">Caption (Optional)</label>
+            <input type="text" class="form-control form-control-sm" name="caption" placeholder="Add a caption…">
+          </div>
+          <div class="form-text small text-muted mt-2">
+            <i class="bi bi-clock-history me-1"></i> Stories automatically expire after 24 hours.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm" id="btnSubmitStory">
+            <i class="bi bi-send-fill me-1"></i> Share to Story
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{# ============ STORY VIEWERS MODAL ============ #}
+<div class="modal fade" id="storyViewersModal" tabindex="-1" aria-labelledby="storyViewersModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h6 class="modal-title fw-bold" id="storyViewersModalLabel">
+          <i class="bi bi-eye me-2 text-primary"></i>Story Viewers (<span id="storyViewersTotal">0</span>)
+        </h6>
+        <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-3" style="max-height: 350px; overflow-y: auto;" id="storyViewersList">
+        <!-- Rendered by stories.js -->
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
 {% block extra_scripts %}
+<script>
+  window.ITSA_CURRENT_USER = {
+    id: {{ current_user.id if current_user.is_authenticated else 'null' }},
+    full_name: {{ (current_user.full_name or 'You') | tojson }},
+    role: {{ (current_user.role or 'STUDENT') | tojson }}
+  };
+</script>
+<script src="{{ url_for('static', filename='js/stories.js') }}"></script>
 <script src="{{ url_for('static', filename='js/feed.js') }}"></script>
 {% endblock %}

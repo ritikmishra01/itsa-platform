@@ -11,7 +11,7 @@ from app.models.feedback import Feedback
 from app.models.post import Post
 from app.models.notification import Notification
 from app.models.report import Report
-from app.models.user import User, StudentProfile
+from app.models.user import User, StudentProfile, CoordinatorProfile
 from app.services.gamification_service import GamificationService
 from app.services.analytics_service import AnalyticsService
 from app.services.ai_service import AIService
@@ -267,6 +267,7 @@ def student_dashboard():
 
 
 @pages_bp.route('/feed')
+@pages_bp.route('/community')
 @login_required
 def social_feed():
     from app.models.post import Post, PostReaction
@@ -522,6 +523,11 @@ def admin_users():
         query = query.filter(User.full_name.ilike(f"%{search}%") | User.email.ilike(f"%{search}%"))
     if role_filter:
         query = query.filter_by(role=role_filter)
+    if dept_filter:
+        query = query.filter(
+            User.student_profile.has(StudentProfile.department == dept_filter) |
+            User.coordinator_profile.has(CoordinatorProfile.department == dept_filter)
+        )
 
     users = query.order_by(User.created_at.desc()).all()
     students = [u for u in users if u.role == 'STUDENT']
@@ -589,6 +595,7 @@ def admin_registrations():
     event_id = request.args.get('event_id')
     status = request.args.get('status')
     dept = request.args.get('department')
+    search = request.args.get('search', '').strip()
 
     query = EventRegistration.query
     if event_id:
@@ -596,7 +603,14 @@ def admin_registrations():
     if status:
         query = query.filter_by(status=status)
     if dept:
-        query = query.join(User).join(StudentProfile).filter(StudentProfile.department == dept)
+        query = query.join(User, EventRegistration.user_id == User.id).join(StudentProfile, User.id == StudentProfile.user_id).filter(StudentProfile.department == dept)
+    if search:
+        # Search by student name, email, or registration number
+        query = query.join(User, EventRegistration.user_id == User.id).filter(
+            User.full_name.ilike(f"%{search}%") |
+            User.email.ilike(f"%{search}%") |
+            EventRegistration.registration_number.ilike(f"%{search}%")
+        )
 
     registrations = query.order_by(EventRegistration.registered_at.desc()).all()
     events = Event.query.all()
@@ -613,6 +627,10 @@ def admin_registrations():
         confirmed_count=confirmed_count,
         cancelled_count=cancelled_count,
         total_count=len(registrations),
+        selected_event_id=int(event_id) if event_id else None,
+        selected_status=status,
+        selected_dept=dept,
+        search=search,
         active_page='registrations'
     )
 
@@ -642,6 +660,7 @@ def admin_attendance():
         total_registered=total_registered,
         total_attended=total_attended,
         attendance_rate=attendance_rate,
+        selected_event_id=int(event_id) if event_id else None,
         active_page='attendance'
     )
 
@@ -853,7 +872,7 @@ def admin_search():
 @pages_bp.route('/search')
 def global_search():
     from app.models.post import Post
-    from app.models.user import User, StudentProfile
+    from app.models.user import User, StudentProfile, CoordinatorProfile
     from app.models.event import Event, EventCategory
 
     q = request.args.get('q', '').strip()

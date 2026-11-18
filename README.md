@@ -9,7 +9,9 @@
 [![Gemini AI](https://img.shields.io/badge/Gemini-2.0_Flash-purple?logo=google)](https://ai.google.dev)
 [![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-blueviolet?logo=bootstrap)](https://getbootstrap.com)
 [![Gunicorn](https://img.shields.io/badge/WSGI-Gunicorn-green?logo=gunicorn)](https://gunicorn.org)
-[![Tests](https://img.shields.io/badge/Tests-36%20Passed-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-87%20Passed-brightgreen)](tests/)
+[![ML](https://img.shields.io/badge/ML-Scikit--learn%20Turnout%20Predictor-orange)](app/ai/)
+[![Stories](https://img.shields.io/badge/Community-Instagram--Style%20Stories-pink)](app/models/story.py)
 
 ---
 
@@ -20,11 +22,11 @@ The **ITSA Platform** is an enterprise-grade, full-stack web application designe
 - **Event Lifecycle & Registrations**: Complete scheduling, RSVP management, capacity enforcement, and registration deadlines.
 - **Digital Ticketing & QR Attendance**: Fast venue check-in scanned by coordinators using device cameras with duplicate protection.
 - **ReportLab Certificate Engine**: Automated vector PDF generation with public QR verification URLs.
-- **Academic Social Community**: Multimedia posts, threaded comments, 5 sentiment reactions, hashtag filtering, and admin moderation.
+- **Academic Social Community & Stories**: Multimedia posts, threaded comments, 5 sentiment reactions, hashtag filtering, and **Instagram-Style Stories** (24-hour TTL, photo/video/text, interactive player, author viewer tracking).
 - **Gamification & Engagement**: ITSA Points system, real-time leaderboard, and AI engagement scoring.
 - **Google Gemini 2.0 Flash AI**: Integrated conversational AI assistant, event description generation, and feedback sentiment analysis.
-- **Scikit-learn Recommendation Engine**: Content-based TF-IDF event recommendations tailored to student departments and interests.
-- **Admin Control Center**: 17 specialized management modules for users, coordinators, events, attendance overrides, moderation, broadcasts, and analytics.
+- **Scikit-learn Machine Learning Engines**: Content-based TF-IDF event recommendations AND a trained **RandomForestRegressor ML Turnout Predictor** ($R^2 = 0.9833$) forecasting event registrations based on category, venue, schedule, duration, and lead time.
+- **Admin Control Center**: 17 specialized management modules with dynamic filtering (category, status, department, search keywords) for users, coordinators, events, attendance, moderation, broadcasts, and analytics.
 
 ---
 
@@ -105,11 +107,11 @@ GitHub (ritikmishra01/itsa-platform) ➔ Render Web Service ➔ Gunicorn (4 Work
 
 ## 6. Automated Testing
 
-Run the comprehensive 36-test suite:
+Run the comprehensive 87-test suite:
 ```bash
 pytest -q
 ```
-**Test Results**: 36 Passed / 0 Failed (100% Pass Rate).
+**Test Results**: 87 Passed / 0 Failed (100% Pass Rate across all unit, integration, RBAC, and ML tests).
 
 ---
 
@@ -119,6 +121,9 @@ Comprehensive specifications are maintained in [`docs/`](docs/):
 
 | Document | Purpose |
 | :--- | :--- |
+| [`docs/GITHUB_UPDATE_REPORT.md`](docs/GITHUB_UPDATE_REPORT.md) | Comprehensive record of all recent enhancements, bug fixes, testing, and GitHub synchronization |
+| [`docs/ML_FILTER_STORIES_TEST_REPORT.md`](docs/ML_FILTER_STORIES_TEST_REPORT.md) | Full technical report on ML Turnout Predictor, Filter Engine, and Instagram-Style Stories |
+| [`docs/END_TO_END_TEST_REPORT.md`](docs/END_TO_END_TEST_REPORT.md) | End-to-end multi-role browser and API verification report |
 | [`docs/FINAL_PROJECT_REPORT.md`](docs/FINAL_PROJECT_REPORT.md) | Master 49-section academic and technical submission report |
 | [`docs/PROJECT_OVERVIEW.md`](docs/PROJECT_OVERVIEW.md) | Problem statement, vision, objectives, and system workflow |
 | [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) | Complete Functional (FR) and Non-Functional (NFR) requirements |

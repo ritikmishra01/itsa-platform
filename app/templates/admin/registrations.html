@@ -38,6 +38,71 @@
     </div>
 </div>
 
+<!-- Filter Toolbar -->
+<div class="card card-itsa p-3 mb-4 shadow-sm border">
+    <form method="GET" action="{{ url_for('pages.admin_registrations') }}" class="row g-2 align-items-center">
+        <div class="col-md-3">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" name="search" value="{{ search or '' }}" placeholder="Search student or ticket...">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select form-select-sm" name="event_id">
+                <option value="">All Events</option>
+                {% for e in events %}
+                <option value="{{ e.id }}" {% if selected_event_id and selected_event_id|string == e.id|string %}selected{% endif %}>{{ e.title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-select form-select-sm" name="status">
+                <option value="">All Statuses</option>
+                <option value="CONFIRMED" {% if selected_status == 'CONFIRMED' %}selected{% endif %}>CONFIRMED</option>
+                <option value="CANCELLED" {% if selected_status == 'CANCELLED' %}selected{% endif %}>CANCELLED</option>
+                <option value="ATTENDED" {% if selected_status == 'ATTENDED' %}selected{% endif %}>ATTENDED</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-select form-select-sm" name="department">
+                <option value="">All Departments</option>
+                {% for d in departments %}
+                <option value="{{ d }}" {% if selected_dept == d %}selected{% endif %}>{{ d }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                <i class="bi bi-funnel-fill me-1"></i> Filter
+            </button>
+            {% if search or selected_event_id or selected_status or selected_dept %}
+            <a href="{{ url_for('pages.admin_registrations') }}" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+                <i class="bi bi-x-circle"></i>
+            </a>
+            {% endif %}
+        </div>
+    </form>
+    {% if search or selected_event_id or selected_status or selected_dept %}
+    <div class="d-flex align-items-center flex-wrap gap-2 mt-2 pt-2 border-top">
+        <span class="text-muted small">Active:</span>
+        {% if search %}
+        <span class="badge bg-light text-dark border">Search: {{ search }}</span>
+        {% endif %}
+        {% if selected_event_id %}
+        {% set sel_ev = (events|selectattr('id', 'equalto', selected_event_id)|first) %}
+        <span class="badge bg-light text-dark border">Event: {{ sel_ev.title if sel_ev else selected_event_id }}</span>
+        {% endif %}
+        {% if selected_status %}
+        <span class="badge bg-light text-dark border">Status: {{ selected_status }}</span>
+        {% endif %}
+        {% if selected_dept %}
+        <span class="badge bg-light text-dark border">Dept: {{ selected_dept }}</span>
+        {% endif %}
+        <a href="{{ url_for('pages.admin_registrations') }}" class="small text-danger ms-1 text-decoration-none">Clear all</a>
+    </div>
+    {% endif %}
+</div>
+
 <!-- Registrations Table -->
 <div class="card card-itsa overflow-hidden shadow-sm">
     <div class="table-responsive">

@@ -14,6 +14,7 @@ from app.models.gallery import EventGallery, EventVolunteer
 from app.models.report import Report
 from app.models.ai_models import AiRecommendation, AiAnalysis
 from app.models.audit import AuditLog
+from app.models.story import Story, StoryView
 
 __all__ = [
     'User', 'StudentProfile', 'CoordinatorProfile',
@@ -25,5 +26,6 @@ __all__ = [
     'PostShare', 'SavedPost', 'Hashtag', 'PostHashtag', 'Mention',
     'Notification', 'ItsaPoints',
     'EventGallery', 'EventVolunteer',
-    'Report', 'AiRecommendation', 'AiAnalysis', 'AuditLog'
+    'Report', 'AiRecommendation', 'AiAnalysis', 'AuditLog',
+    'Story', 'StoryView'
 ]
