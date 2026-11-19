@@ -23,18 +23,17 @@ class AIService:
         if not api_key:
             return None
 
-        # 1. Try google.genai (Modern Google GenAI SDK)
         try:
             from google import genai
             client = genai.Client(api_key=api_key)
-            cfg_model = current_app.config.get('GEMINI_MODEL', 'gemini-3.5-flash')
+            cfg_model = current_app.config.get('GEMINI_MODEL', 'gemini-2.5-flash')
+            # Cascade through supported models; first success wins
             models_to_try = list(dict.fromkeys([
                 cfg_model,
-                'gemini-3.5-flash',
-                'gemini-3.5-flash-lite',
                 'gemini-2.5-flash',
                 'gemini-2.0-flash',
-                'gemini-1.5-flash'
+                'gemini-1.5-flash',
+                'gemini-1.5-pro'
             ]))
             for m in models_to_try:
                 try:
@@ -46,23 +45,8 @@ class AIService:
                         return response.text.strip()
                 except Exception:
                     continue
-        except Exception:
-            pass
-
-        # 2. Try google.generativeai (Legacy SDK)
-        try:
-            import google.generativeai as legacy_genai
-            legacy_genai.configure(api_key=api_key)
-            for m in ['gemini-1.5-flash', 'gemini-1.5-pro']:
-                try:
-                    model = legacy_genai.GenerativeModel(m)
-                    res = model.generate_content(prompt_text)
-                    if res and res.text:
-                        return res.text.strip()
-                except Exception:
-                    continue
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning(f"Gemini API call failed: {exc}")
 
         return None
 
